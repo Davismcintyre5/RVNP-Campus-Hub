@@ -1,0 +1,38 @@
+const express = require('express');
+const router = express.Router();
+
+const authRoutes = require('./authRoutes.js');
+const userRoutes = require('./userRoutes.js');
+const campusRoutes = require('./campusRoutes.js');
+const postRoutes = require('./postRoutes.js');
+const feedRoutes = require('./feedRoutes.js');
+const reelRoutes = require('./reelRoutes.js');
+const reactionRoutes = require('./reactionRoutes.js');
+const commentRoutes = require('./commentRoutes.js');
+const messageRoutes = require('./messageRoutes.js');
+const groupRoutes = require('./groupRoutes.js');
+const storyRoutes = require('./storyRoutes.js');
+const eventRoutes = require('./eventRoutes.js');
+const marketplaceRoutes = require('./marketplaceRoutes.js');
+const notificationRoutes = require('./notificationRoutes.js');
+const searchRoutes = require('./searchRoutes.js');
+const uploadRoutes = require('./uploadRoutes.js');
+
+router.use('/auth', authRoutes);
+router.use('/users', userRoutes);
+router.use('/campuses', campusRoutes);
+router.use('/posts', postRoutes);
+router.use('/feed', feedRoutes);
+router.use('/reels', reelRoutes);
+router.use('/reactions', reactionRoutes);
+router.use('/comments', commentRoutes);
+router.use('/messages', messageRoutes);
+router.use('/groups', groupRoutes);
+router.use('/stories', storyRoutes);
+router.use('/events', eventRoutes);
+router.use('/marketplace', marketplaceRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/search', searchRoutes);
+router.use('/upload', uploadRoutes);
+
+module.exports = router;

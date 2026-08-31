@@ -1,0 +1,512 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  STAFF
+  ALUMNI
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum CampusType {
+  MAIN
+  TOWN
+  SATELLITE
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  VOICE
+  FILE
+  SYSTEM
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+}
+
+enum ReactionType {
+  LIKE
+  LOVE
+  HAHA
+  WOW
+  SAD
+  ANGRY
+}
+
+enum StoryPrivacy {
+  PUBLIC
+  CAMPUS_ONLY
+  FRIENDS_ONLY
+}
+
+enum PostPrivacy {
+  PUBLIC
+  CAMPUS_ONLY
+  DEPARTMENT_ONLY
+  FRIENDS_ONLY
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  REMOVED
+}
+
+enum EventStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum NotificationType {
+  LIKE
+  COMMENT
+  FOLLOW
+  MESSAGE
+  GROUP_INVITE
+  EVENT_REMINDER
+  SYSTEM
+  MARKETPLACE
+  CAMPUS_UPDATE
+}
+
+model Campus {
+  id           String      @id @default(uuid())
+  name         String
+  location     String?
+  type         CampusType  @default(MAIN)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  users        User[]
+  departments  Department[]
+  posts        Post[]
+  reels        Reel[]
+  groups       Group[]
+  events       Event[]
+  listings     MarketplaceListing[]
+  stories      Story[]
+
+  @@map("campuses")
+}
+
+model Department {
+  id           String   @id @default(uuid())
+  name         String
+  campusId     String
+  campus       Campus   @relation(fields: [campusId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  users        User[]
+
+  @@map("departments")
+}
+
+model User {
+  id                  String              @id @default(uuid())
+  fullName            String
+  email               String              @unique
+  phoneNumber         String              @unique
+  passwordHash        String
+  avatarUrl           String?
+  coverUrl            String?
+  bio                 String?
+  role                Role                @default(STUDENT)
+  accountStatus       AccountStatus       @default(ACTIVE)
+  verificationStatus  VerificationStatus  @default(PENDING)
+  hdmVerified     Boolean             @default(false)
+  campusId            String?
+  departmentId        String?
+  course              String?
+  yearOfStudy         Int?
+  staffId             String?
+  graduationYear      Int?
+  lastSeen            DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  campus              Campus?             @relation(fields: [campusId], references: [id], onDelete: SetNull)
+  department          Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  posts               Post[]
+  reels               Reel[]
+  comments            Comment[]
+  reactions           Reaction[]
+  stories             Story[]
+  sentMessages        Message[]           @relation("SentMessages")
+  receivedMessages    Message[]           @relation("ReceivedMessages")
+  conversations       ConversationParticipant[]
+  groupMemberships    GroupMember[]
+  createdGroups       Group[]
+  events              Event[]
+  listings            MarketplaceListing[]
+  notifications       Notification[]
+  followers           Follow[]            @relation("Following")
+  following           Follow[]            @relation("Followers")
+  reports             Report[]
+  auditLogs           AuditLog[]
+
+  @@map("users")
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower    User     @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@map("follows")
+}
+
+model Post {
+  id           String       @id @default(uuid())
+  content      Json?
+  privacy      PostPrivacy  @default(PUBLIC)
+  userId       String
+  campusId     String?
+  likeCount    Int          @default(0)
+  commentCount Int          @default(0)
+  shareCount   Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campus       Campus?      @relation(fields: [campusId], references: [id], onDelete: SetNull)
+  comments     Comment[]
+  reactions    Reaction[]
+  reports      Report[]
+
+  @@index([userId])
+  @@index([campusId])
+  @@index([createdAt])
+  @@map("posts")
+}
+
+model Reel {
+  id           String    @id @default(uuid())
+  videoUrl     String
+  thumbnailUrl String?
+  caption      String?
+  userId       String
+  campusId     String?
+  viewCount    Int       @default(0)
+  likeCount    Int       @default(0)
+  commentCount Int       @default(0)
+  shareCount   Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campus       Campus?   @relation(fields: [campusId], references: [id], onDelete: SetNull)
+  comments     Comment[]
+  reactions    Reaction[]
+  reports      Report[]
+
+  @@index([userId])
+  @@index([campusId])
+  @@index([createdAt])
+  @@map("reels")
+}
+
+model Comment {
+  id          String    @id @default(uuid())
+  content     String
+  userId      String
+  postId      String?
+  reelId      String?
+  parentId    String?
+  likeCount   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post        Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reel        Reel?     @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  parent      Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     Comment[] @relation("CommentReplies")
+  reactions   Reaction[]
+  reports     Report[]
+
+  @@index([userId])
+  @@index([postId])
+  @@index([reelId])
+  @@map("comments")
+}
+
+model Reaction {
+  id          String        @id @default(uuid())
+  type        ReactionType  @default(LIKE)
+  userId      String
+  postId      String?
+  reelId      String?
+  commentId   String?
+  createdAt   DateTime      @default(now())
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post        Post?         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reel        Reel?         @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  comment     Comment?      @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@unique([userId, reelId])
+  @@unique([userId, commentId])
+  @@map("reactions")
+}
+
+model Conversation {
+  id             String                   @id @default(uuid())
+  type           ConversationType         @default(DIRECT)
+  groupId        String?
+  lastMessageId  String?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  group          Group?                   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  participants   ConversationParticipant[]
+  messages       Message[]
+
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  conversationId String
+  userId         String
+  joinedAt       DateTime     @default(now())
+  leftAt         DateTime?
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String        @id @default(uuid())
+  conversationId String
+  senderId       String
+  recipientId    String?
+  type           MessageType   @default(TEXT)
+  content        Json?
+  readAt         DateTime?
+  createdAt      DateTime      @default(now())
+  deletedAt      DateTime?
+
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User          @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient      User?         @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+model Group {
+  id            String       @id @default(uuid())
+  name          String
+  description   String?
+  avatarUrl     String?
+  campusId      String?
+  createdBy     String
+  memberCount   Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  deletedAt     DateTime?
+
+  campus        Campus?      @relation(fields: [campusId], references: [id], onDelete: SetNull)
+  creator       User         @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  members       GroupMember[]
+  conversations Conversation[]
+
+  @@index([campusId])
+  @@map("groups")
+}
+
+model GroupMember {
+  id        String    @id @default(uuid())
+  groupId   String
+  userId    String
+  role      String    @default("member")
+  joinedAt  DateTime  @default(now())
+
+  group     Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@map("group_members")
+}
+
+model Story {
+  id          String        @id @default(uuid())
+  content     Json
+  privacy     StoryPrivacy  @default(PUBLIC)
+  userId      String
+  campusId    String?
+  viewCount   Int           @default(0)
+  expiresAt   DateTime
+  createdAt   DateTime      @default(now())
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campus      Campus?       @relation(fields: [campusId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("stories")
+}
+
+model Event {
+  id          String       @id @default(uuid())
+  title       String
+  description String?
+  location    String?
+  campusId    String?
+  createdBy   String
+  startTime   DateTime
+  endTime     DateTime
+  status      EventStatus  @default(UPCOMING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  campus      Campus?      @relation(fields: [campusId], references: [id], onDelete: SetNull)
+  creator     User         @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@index([campusId])
+  @@index([startTime])
+  @@map("events")
+}
+
+model MarketplaceListing {
+  id          String        @id @default(uuid())
+  title       String
+  description String?
+  price       Float
+  category    String
+  images      Json?
+  userId      String
+  campusId    String?
+  status      ListingStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campus      Campus?       @relation(fields: [campusId], references: [id], onDelete: SetNull)
+
+  @@index([campusId])
+  @@index([status])
+  @@map("marketplace_listings")
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  userId      String
+  type        NotificationType
+  title       String
+  body        String
+  data        Json?
+  read        Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@map("notifications")
+}
+
+model Report {
+  id          String       @id @default(uuid())
+  reporterId  String
+  postId      String?
+  reelId      String?
+  commentId   String?
+  reason      String
+  description String?
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  reviewedAt  DateTime?
+  reviewedBy  String?
+
+  reporter    User         @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  post        Post?        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reel        Reel?        @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  comment     Comment?     @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("reports")
+}
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  adminId     String
+  action      String
+  details     Json?
+  ipAddress   String?
+  createdAt   DateTime  @default(now())
+
+  admin       User      @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Setting {
+  id          String    @id @default(uuid())
+  key         String    @unique
+  value       Json
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("settings")
+}
+
+model Legal {
+  id          String    @id @default(uuid())
+  type        String
+  title       String
+  content     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([type])
+  @@map("legals")
+}
