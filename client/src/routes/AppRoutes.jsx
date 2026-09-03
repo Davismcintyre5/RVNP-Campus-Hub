@@ -24,6 +24,7 @@ import Settings from '../pages/Settings.jsx';
 import PrivacySettings from '../pages/PrivacySettings.jsx';
 import Stories from '../pages/Stories.jsx';
 import CreateStory from '../pages/CreateStory.jsx';
+import Friends from '../pages/Friends.jsx';
 import NotFound from '../pages/NotFound.jsx';
 
 const AppRoutes = () => {
@@ -52,6 +53,7 @@ const AppRoutes = () => {
       <Route path="/privacy" element={<ProtectedRoute><PrivacySettings /></ProtectedRoute>} />
       <Route path="/stories/:userId" element={<ProtectedRoute><Stories /></ProtectedRoute>} />
       <Route path="/stories/create" element={<ProtectedRoute><CreateStory /></ProtectedRoute>} />
+      <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>

@@ -80,6 +80,19 @@ const markAsRead = async (conversationId, userId) => {
   });
 };
 
+const markAsDelivered = async (conversationId, userId) => {
+  return prisma.message.updateMany({
+    where: {
+      conversationId,
+      recipientId: userId,
+      deliveredAt: null,
+    },
+    data: {
+      deliveredAt: new Date(),
+    },
+  });
+};
+
 const softDelete = async (id) => {
   return prisma.message.update({
     where: { id },
@@ -93,8 +106,26 @@ const getUnreadCount = async (userId) => {
       recipientId: userId,
       readAt: null,
       deletedAt: null,
+      senderId: { not: userId },
     },
   });
+};
+
+const getMessageStatus = async (messageId) => {
+  const message = await prisma.message.findUnique({
+    where: { id: messageId },
+    select: {
+      id: true,
+      deliveredAt: true,
+      readAt: true,
+    },
+  });
+
+  if (!message) return null;
+
+  if (message.readAt) return 'READ';
+  if (message.deliveredAt) return 'DELIVERED';
+  return 'SENT';
 };
 
 module.exports = {
@@ -102,6 +133,8 @@ module.exports = {
   create,
   findByConversation,
   markAsRead,
+  markAsDelivered,
   softDelete,
   getUnreadCount,
+  getMessageStatus,
 };

@@ -101,20 +101,9 @@ const getUserPosts = asyncHandler(async (req, res) => {
   res.json(ApiResponse.ok(data));
 });
 
-const getCampusPosts = asyncHandler(async (req, res) => {
-  const { campusId } = req.params;
-  const { page, limit } = req.query;
-
-  const data = await Post.findByCampus(campusId, {
-    page: parseInt(page) || 1,
-    limit: parseInt(limit) || 20,
-  });
-
-  res.json(ApiResponse.ok(data));
-});
-
-const likePost = asyncHandler(async (req, res) => {
+const reactToPost = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { type } = req.body;
   const userId = req.user.id;
 
   const post = await Post.findById(id);
@@ -126,38 +115,44 @@ const likePost = asyncHandler(async (req, res) => {
   const existing = await Reaction.findExisting(userId, id, null, null);
 
   if (existing) {
-    throw ApiError.conflict('Already liked this post');
+    await Reaction.remove(existing.id);
+    await Post.decrementLike(id);
   }
 
-  await Reaction.create({ userId, postId: id, type: 'LIKE' });
+  const reaction = await Reaction.create({
+    userId,
+    postId: id,
+    type: type || 'LIKE',
+  });
+
   await Post.incrementLike(id);
 
   if (post.userId !== userId) {
     await notificationService.createNotification({
       userId: post.userId,
       type: 'LIKE',
-      title: 'New Like',
-      body: `${req.user.fullName} liked your post`,
+      title: 'New Reaction',
+      body: `${req.user.fullName} reacted to your post`,
     });
   }
 
-  res.json(ApiResponse.ok(null, 'Post liked'));
+  res.json(ApiResponse.ok(reaction, 'Reaction added'));
 });
 
-const unlikePost = asyncHandler(async (req, res) => {
+const removeReaction = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;
 
   const existing = await Reaction.findExisting(userId, id, null, null);
 
   if (!existing) {
-    throw ApiError.badRequest('Not liked this post');
+    throw ApiError.badRequest('No reaction found');
   }
 
   await Reaction.remove(existing.id);
   await Post.decrementLike(id);
 
-  res.json(ApiResponse.ok(null, 'Post unliked'));
+  res.json(ApiResponse.ok(null, 'Reaction removed'));
 });
 
 const sharePost = asyncHandler(async (req, res) => {
@@ -175,10 +170,7 @@ const sharePost = asyncHandler(async (req, res) => {
 
   if (type === 'FEED') {
     const sharedPost = await Post.createShare(id, userId, content);
-
-    return res.status(201).json(
-      ApiResponse.created(sharedPost, 'Post shared to feed')
-    );
+    return res.status(201).json(ApiResponse.created(sharedPost, 'Post shared to feed'));
   }
 
   res.json(ApiResponse.ok(null, 'Post shared'));
@@ -191,8 +183,7 @@ module.exports = {
   deletePost,
   getMyPosts,
   getUserPosts,
-  getCampusPosts,
-  likePost,
-  unlikePost,
+  reactToPost,
+  removeReaction,
   sharePost,
 };

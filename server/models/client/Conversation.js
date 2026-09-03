@@ -11,6 +11,7 @@ const findById = async (id) => {
               id: true,
               fullName: true,
               avatarUrl: true,
+              hdmVerified: true,
             },
           },
         },
@@ -18,6 +19,13 @@ const findById = async (id) => {
       messages: {
         take: 1,
         orderBy: { createdAt: 'desc' },
+      },
+      group: {
+        select: {
+          id: true,
+          name: true,
+          avatarUrl: true,
+        },
       },
     },
   });
@@ -42,7 +50,18 @@ const findDirectConversation = async (user1Id, user2Id) => {
       },
     },
     include: {
-      participants: true,
+      participants: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              avatarUrl: true,
+              hdmVerified: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -76,6 +95,7 @@ const findByUser = async (userId, { page = 1, limit = 20 }) => {
               id: true,
               fullName: true,
               avatarUrl: true,
+              hdmVerified: true,
             },
           },
         },
@@ -83,6 +103,9 @@ const findByUser = async (userId, { page = 1, limit = 20 }) => {
       messages: {
         take: 1,
         orderBy: { createdAt: 'desc' },
+        where: {
+          deletedAt: null,
+        },
       },
       group: {
         select: {
@@ -94,6 +117,25 @@ const findByUser = async (userId, { page = 1, limit = 20 }) => {
     },
   });
 
+  const conversationsWithUnread = await Promise.all(
+    conversations.map(async (conv) => {
+      const unreadCount = await prisma.message.count({
+        where: {
+          conversationId: conv.id,
+          recipientId: userId,
+          readAt: null,
+          deletedAt: null,
+          senderId: { not: userId },
+        },
+      });
+
+      return {
+        ...conv,
+        unreadCount,
+      };
+    })
+  );
+
   const total = await prisma.conversation.count({
     where: {
       participants: {
@@ -104,7 +146,7 @@ const findByUser = async (userId, { page = 1, limit = 20 }) => {
     },
   });
 
-  return { conversations, total };
+  return { conversations: conversationsWithUnread, total };
 };
 
 const addParticipant = async (conversationId, userId) => {
@@ -121,6 +163,7 @@ const updateLastMessage = async (conversationId, messageId) => {
     where: { id: conversationId },
     data: {
       lastMessageId: messageId,
+      updatedAt: new Date(),
     },
   });
 };

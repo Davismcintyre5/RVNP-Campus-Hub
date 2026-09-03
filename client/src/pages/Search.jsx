@@ -1,5 +1,14 @@
-import { useState, useEffect } from 'react';
-import { IoSearch, IoPerson, IoGrid, IoVideocam, IoPeople, IoCalendar, IoStorefront } from 'react-icons/io5';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  IoSearch,
+  IoPerson,
+  IoGrid,
+  IoVideocam,
+  IoPeople,
+  IoCalendar,
+  IoStorefront,
+} from 'react-icons/io5';
 import Layout from '../components/layout/Layout.jsx';
 import Spinner from '../components/ui/Spinner.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
@@ -8,8 +17,10 @@ import Avatar from '../components/ui/Avatar.jsx';
 import VerifiedBadge from '../components/ui/VerifiedBadge.jsx';
 import searchApi from '../api/searchApi.js';
 import timeAgo from '../utils/timeAgo.js';
+import { formatPrice } from '../utils/formatNumber.js';
 
 const Search = () => {
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState('users');
   const [results, setResults] = useState({
@@ -22,6 +33,7 @@ const Search = () => {
   });
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const debounceTimeout = useRef(null);
 
   const tabs = [
     { value: 'users', label: 'Users' },
@@ -34,9 +46,21 @@ const Search = () => {
 
   useEffect(() => {
     if (query.trim() && searched) {
-      handleSearch();
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+      }
+
+      debounceTimeout.current = setTimeout(() => {
+        handleSearch();
+      }, 500);
     }
-  }, [activeTab]);
+
+    return () => {
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+      }
+    };
+  }, [query, activeTab]);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -50,42 +74,42 @@ const Search = () => {
         case 'users':
           response = await searchApi.searchUsers(query);
           if (response.data.success) {
-            setResults((prev) => ({ ...prev, users: response.data.data.users }));
+            setResults((prev) => ({ ...prev, users: response.data.data.users || [] }));
           }
           break;
 
         case 'posts':
           response = await searchApi.searchPosts(query);
           if (response.data.success) {
-            setResults((prev) => ({ ...prev, posts: response.data.data.posts }));
+            setResults((prev) => ({ ...prev, posts: response.data.data.posts || [] }));
           }
           break;
 
         case 'reels':
           response = await searchApi.searchReels(query);
           if (response.data.success) {
-            setResults((prev) => ({ ...prev, reels: response.data.data.reels }));
+            setResults((prev) => ({ ...prev, reels: response.data.data.reels || [] }));
           }
           break;
 
         case 'groups':
           response = await searchApi.searchGroups(query);
           if (response.data.success) {
-            setResults((prev) => ({ ...prev, groups: response.data.data.groups }));
+            setResults((prev) => ({ ...prev, groups: response.data.data.groups || [] }));
           }
           break;
 
         case 'events':
           response = await searchApi.searchEvents(query);
           if (response.data.success) {
-            setResults((prev) => ({ ...prev, events: response.data.data.events }));
+            setResults((prev) => ({ ...prev, events: response.data.data.events || [] }));
           }
           break;
 
         case 'marketplace':
           response = await searchApi.searchMarketplace(query);
           if (response.data.success) {
-            setResults((prev) => ({ ...prev, listings: response.data.data.listings }));
+            setResults((prev) => ({ ...prev, listings: response.data.data.listings || [] }));
           }
           break;
       }
@@ -96,10 +120,43 @@ const Search = () => {
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setSearched(true);
-    handleSearch();
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setQuery(value);
+
+    if (value.trim()) {
+      setSearched(true);
+    } else {
+      setSearched(false);
+      setResults({
+        users: [],
+        posts: [],
+        reels: [],
+        groups: [],
+        events: [],
+        listings: [],
+      });
+    }
+  };
+
+  const handleUserClick = (userId) => {
+    navigate(`/profile/${userId}`);
+  };
+
+  const handlePostClick = (postId) => {
+    navigate(`/post/${postId}`);
+  };
+
+  const handleGroupClick = (groupId) => {
+    navigate(`/groups/${groupId}`);
+  };
+
+  const handleEventClick = (eventId) => {
+    navigate(`/events/${eventId}`);
+  };
+
+  const handleListingClick = (listingId) => {
+    navigate(`/marketplace/${listingId}`);
   };
 
   const renderResults = () => {
@@ -111,7 +168,7 @@ const Search = () => {
       );
     }
 
-    if (!searched) {
+    if (!searched || !query.trim()) {
       return (
         <EmptyState
           icon={IoSearch}
@@ -129,21 +186,25 @@ const Search = () => {
         return (
           <div className="space-y-2">
             {results.users.map((user) => (
-              <div
+              <button
                 key={user.id}
-                className="flex items-center gap-3 p-3 rounded-xl border border-border-color bg-bg-primary"
+                onClick={() => handleUserClick(user.id)}
+                className="w-full flex items-center gap-3 p-3 rounded-xl border border-border-color bg-bg-primary hover:bg-bg-secondary transition-all text-left cursor-pointer"
               >
-                <Avatar src={user.avatarUrl} name={user.fullName} size="sm" />
-                <div>
+                <Avatar src={user.avatarUrl} name={user.fullName} size="md" />
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1">
-                    <span className="font-medium text-text-primary">{user.fullName}</span>
+                    <span className="font-medium text-text-primary truncate">{user.fullName}</span>
                     {user.hdmVerified && <VerifiedBadge size={14} />}
                   </div>
                   {user.course && (
                     <span className="text-xs text-text-muted">{user.course}</span>
                   )}
+                  {user.campus && (
+                    <span className="text-xs text-text-muted block">📍 {user.campus.name}</span>
+                  )}
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         );
@@ -155,17 +216,18 @@ const Search = () => {
         return (
           <div className="space-y-2">
             {results.posts.map((post) => (
-              <div
+              <button
                 key={post.id}
-                className="p-4 rounded-xl border border-border-color bg-bg-primary"
+                onClick={() => handlePostClick(post.id)}
+                className="w-full p-4 rounded-xl border border-border-color bg-bg-primary hover:bg-bg-secondary transition-all text-left cursor-pointer"
               >
                 <div className="flex items-center gap-2 mb-2">
                   <Avatar src={post.user?.avatarUrl} name={post.user?.fullName} size="sm" />
                   <span className="font-medium text-text-primary">{post.user?.fullName}</span>
                   <span className="text-xs text-text-muted">{timeAgo(post.createdAt)}</span>
                 </div>
-                <p className="text-text-primary">{post.content?.text}</p>
-              </div>
+                <p className="text-text-primary text-sm line-clamp-3">{post.content?.text}</p>
+              </button>
             ))}
           </div>
         );
@@ -175,11 +237,24 @@ const Search = () => {
           return <EmptyState title="No reels found" />;
         }
         return (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {results.reels.map((reel) => (
-              <div key={reel.id} className="aspect-video rounded-lg overflow-hidden bg-bg-secondary">
-                <video src={reel.videoUrl} className="w-full h-full object-cover" />
-              </div>
+              <button
+                key={reel.id}
+                onClick={() => navigate('/reels')}
+                className="aspect-video rounded-lg overflow-hidden bg-bg-secondary cursor-pointer hover:opacity-80 transition-opacity"
+              >
+                {reel.thumbnailUrl ? (
+                  <img src={reel.thumbnailUrl} alt={reel.caption} className="w-full h-full object-cover" />
+                ) : (
+                  <video src={reel.videoUrl} className="w-full h-full object-cover" />
+                )}
+                {reel.caption && (
+                  <span className="absolute bottom-0 left-0 right-0 p-2 bg-black bg-opacity-50 text-white text-xs truncate">
+                    {reel.caption}
+                  </span>
+                )}
+              </button>
             ))}
           </div>
         );
@@ -191,18 +266,26 @@ const Search = () => {
         return (
           <div className="space-y-2">
             {results.groups.map((group) => (
-              <div
+              <button
                 key={group.id}
-                className="flex items-center gap-3 p-3 rounded-xl border border-border-color bg-bg-primary"
+                onClick={() => handleGroupClick(group.id)}
+                className="w-full flex items-center gap-3 p-3 rounded-xl border border-border-color bg-bg-primary hover:bg-bg-secondary transition-all text-left cursor-pointer"
               >
-                <IoPeople size={24} className="text-text-muted" />
-                <div>
-                  <span className="font-medium text-text-primary">{group.name}</span>
-                  <span className="text-xs text-text-muted ml-2">
+                <div className="p-2 rounded-full bg-bg-secondary">
+                  <IoPeople size={20} className="text-text-secondary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-text-primary block truncate">{group.name}</span>
+                  <span className="text-xs text-text-muted">
                     {group._count?.members || 0} members
                   </span>
                 </div>
-              </div>
+                {group.description && (
+                  <span className="text-xs text-text-muted truncate max-w-[150px] hidden sm:block">
+                    {group.description}
+                  </span>
+                )}
+              </button>
             ))}
           </div>
         );
@@ -214,16 +297,21 @@ const Search = () => {
         return (
           <div className="space-y-2">
             {results.events.map((event) => (
-              <div
+              <button
                 key={event.id}
-                className="flex items-center gap-3 p-3 rounded-xl border border-border-color bg-bg-primary"
+                onClick={() => handleEventClick(event.id)}
+                className="w-full flex items-center gap-3 p-3 rounded-xl border border-border-color bg-bg-primary hover:bg-bg-secondary transition-all text-left cursor-pointer"
               >
-                <IoCalendar size={24} className="text-text-muted" />
-                <div>
-                  <span className="font-medium text-text-primary">{event.title}</span>
-                  <span className="text-xs text-text-muted ml-2">{event.location}</span>
+                <div className="p-2 rounded-full bg-bg-secondary">
+                  <IoCalendar size={20} className="text-text-secondary" />
                 </div>
-              </div>
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-text-primary block truncate">{event.title}</span>
+                  {event.location && (
+                    <span className="text-xs text-text-muted">📍 {event.location}</span>
+                  )}
+                </div>
+              </button>
             ))}
           </div>
         );
@@ -235,18 +323,22 @@ const Search = () => {
         return (
           <div className="space-y-2">
             {results.listings.map((listing) => (
-              <div
+              <button
                 key={listing.id}
-                className="flex items-center gap-3 p-3 rounded-xl border border-border-color bg-bg-primary"
+                onClick={() => handleListingClick(listing.id)}
+                className="w-full flex items-center gap-3 p-3 rounded-xl border border-border-color bg-bg-primary hover:bg-bg-secondary transition-all text-left cursor-pointer"
               >
-                <IoStorefront size={24} className="text-text-muted" />
-                <div>
-                  <span className="font-medium text-text-primary">{listing.title}</span>
-                  <span className="text-xs text-text-muted ml-2">
-                    KSh {listing.price}
-                  </span>
+                <div className="p-2 rounded-full bg-bg-secondary">
+                  <IoStorefront size={20} className="text-text-secondary" />
                 </div>
-              </div>
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-text-primary block truncate">{listing.title}</span>
+                  <span className="text-xs text-text-muted">{listing.category}</span>
+                </div>
+                <span className="font-semibold text-rvnp-green shrink-0">
+                  {formatPrice(listing.price)}
+                </span>
+              </button>
             ))}
           </div>
         );
@@ -258,28 +350,27 @@ const Search = () => {
 
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto">
+      <div className="w-full">
         <h1 className="text-2xl font-heading font-bold text-text-primary mb-4">
           Search
         </h1>
 
-        <form onSubmit={handleSubmit} className="mb-4">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search..."
-              className="flex-1 px-4 py-2 rounded-lg bg-bg-secondary text-text-primary border border-border-color focus:outline-none placeholder:text-text-muted"
-            />
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-lg bg-bg-secondary text-text-primary border border-border-color hover:bg-bg-tertiary"
-            >
-              <IoSearch size={20} />
-            </button>
-          </div>
-        </form>
+        <div className="relative mb-4">
+          <IoSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
+          <input
+            type="text"
+            value={query}
+            onChange={handleInputChange}
+            placeholder="Search users, posts, reels, groups, events..."
+            autoFocus
+            className="w-full pl-10 pr-4 py-3 rounded-lg bg-bg-secondary text-text-primary border border-border-color focus:outline-none focus:border-rvnp-green placeholder:text-text-muted"
+          />
+          {loading && (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2">
+              <Spinner size="sm" />
+            </span>
+          )}
+        </div>
 
         <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 

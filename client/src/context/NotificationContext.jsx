@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext.jsx';
+import { useSocket } from './SocketContext.jsx';
 import notificationApi from '../api/notificationApi.js';
 import messageApi from '../api/messageApi.js';
 
@@ -15,6 +16,7 @@ export const useNotifications = () => {
 
 export const NotificationProvider = ({ children }) => {
   const { isAuthenticated } = useAuth();
+  const { socket, isConnected } = useSocket();
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
 
@@ -23,6 +25,24 @@ export const NotificationProvider = ({ children }) => {
       fetchCounts();
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (socket && isConnected) {
+      socket.on('new-message', (message) => {
+        setUnreadMessages((prev) => prev + 1);
+        fetchNotificationCount();
+      });
+
+      socket.on('notification', () => {
+        fetchNotificationCount();
+      });
+    }
+
+    return () => {
+      socket?.off('new-message');
+      socket?.off('notification');
+    };
+  }, [socket, isConnected]);
 
   const fetchCounts = async () => {
     try {
@@ -40,6 +60,18 @@ export const NotificationProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Failed to fetch unread counts:', error.message);
+    }
+  };
+
+  const fetchNotificationCount = async () => {
+    try {
+      const response = await notificationApi.getUnreadCount();
+
+      if (response.data.success) {
+        setUnreadNotifications(response.data.data.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch notification count:', error.message);
     }
   };
 

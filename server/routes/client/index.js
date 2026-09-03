@@ -18,6 +18,8 @@ const notificationRoutes = require('./notificationRoutes.js');
 const searchRoutes = require('./searchRoutes.js');
 const uploadRoutes = require('./uploadRoutes.js');
 const privacyRoutes = require('./privacyRoutes.js');
+const friendRoutes = require('./friendRoutes.js');
+const aiRoutes = require('./aiRoutes.js');
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
@@ -36,5 +38,7 @@ router.use('/notifications', notificationRoutes);
 router.use('/search', searchRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/privacy', privacyRoutes);
+router.use('/friends', friendRoutes);
+router.use('/ai', aiRoutes);
 
 module.exports = router;

@@ -12,6 +12,7 @@ const settingsRoutes = require('./settingsRoutes.js');
 const legalsRoutes = require('./legalsRoutes.js');
 const backupsRoutes = require('./backupsRoutes.js');
 const healthRoutes = require('./healthRoutes.js');
+const aiRoutes = require('./aiRoutes.js');
 
 router.use('/auth', adminAuthRoutes);
 router.use('/dashboard', dashboardRoutes);
@@ -24,5 +25,6 @@ router.use('/settings', settingsRoutes);
 router.use('/legals', legalsRoutes);
 router.use('/backups', backupsRoutes);
 router.use('/health', healthRoutes);
+router.use('/ai', aiRoutes);
 
 module.exports = router;

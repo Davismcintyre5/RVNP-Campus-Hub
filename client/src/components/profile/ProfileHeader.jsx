@@ -1,32 +1,73 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IoChatbubble, IoPersonAdd, IoPersonRemove, IoSettings, IoCamera } from 'react-icons/io5';
+import {
+  IoChatbubble,
+  IoPersonAdd,
+  IoPersonRemove,
+  IoSettings,
+  IoCamera,
+} from 'react-icons/io5';
 import CoverPhoto from '../ui/CoverPhoto.jsx';
 import Avatar from '../ui/Avatar.jsx';
 import Button from '../ui/Button.jsx';
 import VerifiedBadge from '../ui/VerifiedBadge.jsx';
+import FriendsBadge from '../friends/FriendsBadge.jsx';
 import StatCard from '../ui/StatCard.jsx';
+import Modal from '../ui/Modal.jsx';
+import Spinner from '../ui/Spinner.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { formatDate } from '../../utils/formatDate.js';
+import userApi from '../../api/userApi.js';
 
 const ProfileHeader = ({ user, isFollowing, onFollow, onUnfollow, onMessage, onCoverChange, onAvatarChange }) => {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const [showFullBio, setShowFullBio] = useState(false);
-  const avatarInputRef = useRef(null);
+  const [showFollowers, setShowFollowers] = useState(false);
+  const [showFollowing, setShowFollowing] = useState(false);
+  const [followers, setFollowers] = useState([]);
+  const [following, setFollowing] = useState([]);
+  const [loadingList, setLoadingList] = useState(false);
 
   const isOwnProfile = currentUser?.id === user?.id;
 
   const handleAvatarClick = () => {
     if (isOwnProfile) {
-      avatarInputRef.current?.click();
+      document.getElementById('avatar-input').click();
     }
   };
 
-  const handleAvatarFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file && onAvatarChange) {
-      onAvatarChange(file);
+  const fetchFollowers = async () => {
+    setLoadingList(true);
+    setShowFollowers(true);
+
+    try {
+      const response = await userApi.getFollowers(user.id);
+
+      if (response.data.success) {
+        setFollowers(response.data.data.followers || []);
+      }
+    } catch (error) {
+      console.error('Failed to load followers:', error.message);
+    } finally {
+      setLoadingList(false);
+    }
+  };
+
+  const fetchFollowing = async () => {
+    setLoadingList(true);
+    setShowFollowing(true);
+
+    try {
+      const response = await userApi.getFollowing(user.id);
+
+      if (response.data.success) {
+        setFollowing(response.data.data.following || []);
+      }
+    } catch (error) {
+      console.error('Failed to load following:', error.message);
+    } finally {
+      setLoadingList(false);
     }
   };
 
@@ -49,21 +90,22 @@ const ProfileHeader = ({ user, isFollowing, onFollow, onUnfollow, onMessage, onC
             />
 
             {isOwnProfile && (
-              <button
-                onClick={handleAvatarClick}
-                className="absolute bottom-0 right-0 p-1.5 rounded-full bg-bg-primary border border-border-color text-text-secondary hover:text-text-primary"
-              >
-                <IoCamera size={14} />
-              </button>
+              <>
+                <button
+                  onClick={handleAvatarClick}
+                  className="absolute bottom-0 right-0 z-20 p-1.5 rounded-full bg-bg-primary border border-border-color text-text-secondary hover:text-text-primary shadow-lg cursor-pointer"
+                >
+                  <IoCamera size={14} />
+                </button>
+                <input
+                  id="avatar-input"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={onAvatarChange}
+                />
+              </>
             )}
-
-            <input
-              ref={avatarInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleAvatarFileChange}
-            />
           </div>
 
           <div className="flex gap-2">
@@ -96,11 +138,12 @@ const ProfileHeader = ({ user, isFollowing, onFollow, onUnfollow, onMessage, onC
         </div>
 
         <div className="px-4 mt-4">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl font-heading font-bold text-text-primary">
               {user?.fullName}
             </h1>
             {user?.hdmVerified && <VerifiedBadge size={22} />}
+            {user?.isFriend && <FriendsBadge isFriend={user.isFriend} size="md" />}
           </div>
 
           {user?.course && (
@@ -140,14 +183,107 @@ const ProfileHeader = ({ user, isFollowing, onFollow, onUnfollow, onMessage, onC
             Joined {formatDate(user?.createdAt, 'DD MMMM YYYY')}
           </p>
 
-          <div className="flex gap-2 mt-4 border-t border-border-color pt-3">
-            <StatCard label="Posts" value={user?._count?.posts || 0} />
-            <StatCard label="Reels" value={user?._count?.reels || 0} />
-            <StatCard label="Followers" value={user?._count?.followers || 0} />
-            <StatCard label="Following" value={user?._count?.following || 0} />
+          <div className="flex gap-2 mt-4 border-t border-border-color pt-3 flex-wrap">
+            <StatCard
+              label="Posts"
+              value={user?._count?.posts || 0}
+            />
+            <StatCard
+              label="Reels"
+              value={user?._count?.reels || 0}
+            />
+            <StatCard
+              label="Friends"
+              value={user?._count?.friends || 0}
+              onClick={() => navigate('/friends')}
+            />
+            <StatCard
+              label="Followers"
+              value={user?._count?.followers || 0}
+              onClick={fetchFollowers}
+            />
+            <StatCard
+              label="Following"
+              value={user?._count?.following || 0}
+              onClick={fetchFollowing}
+            />
           </div>
         </div>
       </div>
+
+      {/* Followers Modal */}
+      <Modal isOpen={showFollowers} onClose={() => setShowFollowers(false)} title="Followers" size="sm">
+        {loadingList ? (
+          <div className="flex justify-center py-8">
+            <Spinner size="md" />
+          </div>
+        ) : followers.length === 0 ? (
+          <p className="text-center text-text-muted py-8">No followers yet</p>
+        ) : (
+          <div className="space-y-1 max-h-64 overflow-y-auto">
+            {followers.map((follow) => (
+              <button
+                key={follow.id}
+                onClick={() => {
+                  setShowFollowers(false);
+                  navigate(`/profile/${follow.follower?.id}`);
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-bg-secondary transition-all text-left"
+              >
+                <Avatar src={follow.follower?.avatarUrl} name={follow.follower?.fullName} size="sm" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium text-text-primary text-sm truncate">
+                      {follow.follower?.fullName}
+                    </span>
+                    {follow.follower?.hdmVerified && <VerifiedBadge size={12} />}
+                  </div>
+                  {follow.follower?.course && (
+                    <span className="text-xs text-text-muted">{follow.follower.course}</span>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </Modal>
+
+      {/* Following Modal */}
+      <Modal isOpen={showFollowing} onClose={() => setShowFollowing(false)} title="Following" size="sm">
+        {loadingList ? (
+          <div className="flex justify-center py-8">
+            <Spinner size="md" />
+          </div>
+        ) : following.length === 0 ? (
+          <p className="text-center text-text-muted py-8">Not following anyone yet</p>
+        ) : (
+          <div className="space-y-1 max-h-64 overflow-y-auto">
+            {following.map((follow) => (
+              <button
+                key={follow.id}
+                onClick={() => {
+                  setShowFollowing(false);
+                  navigate(`/profile/${follow.following?.id}`);
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-bg-secondary transition-all text-left"
+              >
+                <Avatar src={follow.following?.avatarUrl} name={follow.following?.fullName} size="sm" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium text-text-primary text-sm truncate">
+                      {follow.following?.fullName}
+                    </span>
+                    {follow.following?.hdmVerified && <VerifiedBadge size={12} />}
+                  </div>
+                  {follow.following?.course && (
+                    <span className="text-xs text-text-muted">{follow.following.course}</span>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

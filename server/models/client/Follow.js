@@ -50,6 +50,8 @@ const getFollowers = async (userId, { page = 1, limit = 20 }) => {
             id: true,
             fullName: true,
             avatarUrl: true,
+            hdmVerified: true,
+            course: true,
             campus: {
               select: {
                 id: true,
@@ -83,6 +85,8 @@ const getFollowing = async (userId, { page = 1, limit = 20 }) => {
             id: true,
             fullName: true,
             avatarUrl: true,
+            hdmVerified: true,
+            course: true,
             campus: {
               select: {
                 id: true,

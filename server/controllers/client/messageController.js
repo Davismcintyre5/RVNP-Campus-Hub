@@ -1,10 +1,10 @@
+const prisma = require('../../config/database.js');
 const Conversation = require('../../models/client/Conversation.js');
 const Message = require('../../models/client/Message.js');
 const ApiResponse = require('../../utils/ApiResponse.js');
 const ApiError = require('../../utils/ApiError.js');
 const asyncHandler = require('../../utils/asyncHandler.js');
 const socketService = require('../../services/socketService.js');
-const notificationService = require('../../services/notificationService.js');
 
 const getConversations = asyncHandler(async (req, res) => {
   const { page, limit } = req.query;
@@ -47,7 +47,9 @@ const createDirectConversation = asyncHandler(async (req, res) => {
     throw ApiError.badRequest('Cannot create conversation with yourself');
   }
 
-  const recipient = await prisma.user.findUnique({ where: { id: recipientId } });
+  const recipient = await prisma.user.findUnique({
+    where: { id: recipientId },
+  });
 
   if (!recipient) {
     throw ApiError.notFound('Recipient not found');
@@ -66,7 +68,9 @@ const createDirectConversation = asyncHandler(async (req, res) => {
   await Conversation.addParticipant(conversation.id, userId);
   await Conversation.addParticipant(conversation.id, recipientId);
 
-  res.status(201).json(ApiResponse.created(conversation));
+  const fullConversation = await Conversation.findById(conversation.id);
+
+  res.status(201).json(ApiResponse.created(fullConversation));
 });
 
 const getMessages = asyncHandler(async (req, res) => {
@@ -85,19 +89,20 @@ const getMessages = asyncHandler(async (req, res) => {
     throw ApiError.forbidden('You are not a participant in this conversation');
   }
 
+  await Message.markAsDelivered(conversationId, req.user.id);
+  await Message.markAsRead(conversationId, req.user.id);
+
   const data = await Message.findByConversation(conversationId, {
     page: parseInt(page) || 1,
     limit: parseInt(limit) || 50,
   });
-
-  await Message.markAsRead(conversationId, req.user.id);
 
   res.json(ApiResponse.ok(data));
 });
 
 const sendMessage = asyncHandler(async (req, res) => {
   const { conversationId } = req.params;
-  const { content, type, recipientId } = req.body;
+  const { content, type } = req.body;
   const userId = req.user.id;
 
   if (!content) {
@@ -116,27 +121,21 @@ const sendMessage = asyncHandler(async (req, res) => {
     throw ApiError.forbidden('You are not a participant in this conversation');
   }
 
+  const otherParticipant = conversation.participants.find((p) => p.userId !== userId);
+
   const message = await Message.create({
     conversationId,
     senderId: userId,
-    recipientId: recipientId || null,
+    recipientId: otherParticipant?.userId || null,
     content,
     type: type || 'TEXT',
+    deliveredAt: new Date(),
   });
 
   await Conversation.updateLastMessage(conversationId, message.id);
 
-  const otherParticipants = conversation.participants.filter((p) => p.userId !== userId);
-
-  for (const participant of otherParticipants) {
-    socketService.notifyNewMessage(participant.userId, message);
-
-    await notificationService.createNotification({
-      userId: participant.userId,
-      type: 'MESSAGE',
-      title: 'New Message',
-      body: `${req.user.fullName} sent you a message`,
-    });
+  if (otherParticipant) {
+    socketService.notifyNewMessage(otherParticipant.userId, message);
   }
 
   res.status(201).json(ApiResponse.created(message));

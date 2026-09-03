@@ -1,9 +1,51 @@
 const Settings = require('../../models/admin/Settings.js');
-const Campus = require('../../models/client/Campus.js');
+const prisma = require('../../config/database.js');
 const ApiResponse = require('../../utils/ApiResponse.js');
 const ApiError = require('../../utils/ApiError.js');
 const asyncHandler = require('../../utils/asyncHandler.js');
-const prisma = require('../../config/database.js');
+
+const getAllSettings = asyncHandler(async (req, res) => {
+  const [general, campuses, departments] = await Promise.all([
+    Settings.getGeneralSettings(),
+    prisma.campus.findMany({
+      include: {
+        departments: true,
+        _count: {
+          select: {
+            users: true,
+            posts: true,
+            reels: true,
+            groups: true,
+            events: true,
+          },
+        },
+      },
+    }),
+    prisma.department.findMany({
+      include: {
+        campus: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        _count: {
+          select: {
+            users: true,
+          },
+        },
+      },
+    }),
+  ]);
+
+  res.json(
+    ApiResponse.ok({
+      general,
+      campuses,
+      departments,
+    })
+  );
+});
 
 const getGeneralSettings = asyncHandler(async (req, res) => {
   const settings = await Settings.getGeneralSettings();
@@ -243,6 +285,7 @@ const deleteDepartment = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  getAllSettings,
   getGeneralSettings,
   getSettingByKey,
   updateGeneralSettings,

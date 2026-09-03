@@ -1,5 +1,6 @@
 const User = require('../../models/client/User.js');
 const Follow = require('../../models/client/Follow.js');
+const Friend = require('../../models/client/Friend.js');
 const ApiResponse = require('../../utils/ApiResponse.js');
 const ApiError = require('../../utils/ApiError.js');
 const asyncHandler = require('../../utils/asyncHandler.js');
@@ -14,7 +15,44 @@ const getProfile = asyncHandler(async (req, res) => {
     throw ApiError.notFound('User not found');
   }
 
-  res.json(ApiResponse.ok(user));
+  const [followerCount, followingCount, friendCount] = await Promise.all([
+    Follow.getFollowerCount(userId),
+    Follow.getFollowingCount(userId),
+    Friend.getFriendCount(userId),
+  ]);
+
+  const formattedUser = {
+    id: user.id,
+    fullName: user.fullName,
+    email: user.email,
+    phoneNumber: user.phoneNumber,
+    avatarUrl: user.avatarUrl,
+    coverUrl: user.coverUrl,
+    bio: user.bio,
+    role: user.role,
+    verificationStatus: user.verificationStatus,
+    hdmVerified: user.hdmVerified,
+    accountStatus: user.accountStatus,
+    campusId: user.campusId,
+    departmentId: user.departmentId,
+    course: user.course,
+    yearOfStudy: user.yearOfStudy,
+    staffId: user.staffId,
+    graduationYear: user.graduationYear,
+    lastSeen: user.lastSeen,
+    createdAt: user.createdAt,
+    campus: user.campus,
+    department: user.department,
+    _count: {
+      posts: user._count?.posts || 0,
+      reels: user._count?.reels || 0,
+      followers: followerCount,
+      following: followingCount,
+      friends: friendCount,
+    },
+  };
+
+  res.json(ApiResponse.ok(formattedUser));
 });
 
 const getUserById = asyncHandler(async (req, res) => {
@@ -26,22 +64,84 @@ const getUserById = asyncHandler(async (req, res) => {
     throw ApiError.notFound('User not found');
   }
 
-  const isFollowing = await Follow.isFollowing(req.user.id, id);
+  let isFollowing = false;
+  let isFollower = false;
+  let isFriend = false;
 
-  res.json(ApiResponse.ok({ ...user, isFollowing }));
+  if (req.user.id !== id) {
+    [isFollowing, isFollower] = await Promise.all([
+      Follow.isFollowing(req.user.id, id),
+      Follow.isFollowing(id, req.user.id),
+    ]);
+
+    isFriend = isFollowing && isFollower;
+  }
+
+  const [followerCount, followingCount, friendCount] = await Promise.all([
+    Follow.getFollowerCount(id),
+    Follow.getFollowingCount(id),
+    Friend.getFriendCount(id),
+  ]);
+
+  const formattedUser = {
+    id: user.id,
+    fullName: user.fullName,
+    email: user.email,
+    phoneNumber: user.phoneNumber,
+    avatarUrl: user.avatarUrl,
+    coverUrl: user.coverUrl,
+    bio: user.bio,
+    role: user.role,
+    verificationStatus: user.verificationStatus,
+    hdmVerified: user.hdmVerified,
+    accountStatus: user.accountStatus,
+    campusId: user.campusId,
+    departmentId: user.departmentId,
+    course: user.course,
+    yearOfStudy: user.yearOfStudy,
+    staffId: user.staffId,
+    graduationYear: user.graduationYear,
+    lastSeen: user.lastSeen,
+    createdAt: user.createdAt,
+    campus: user.campus,
+    department: user.department,
+    _count: {
+      posts: user._count?.posts || 0,
+      reels: user._count?.reels || 0,
+      followers: followerCount,
+      following: followingCount,
+      friends: friendCount,
+    },
+    isFollowing,
+    isFollower,
+    isFriend,
+  };
+
+  res.json(ApiResponse.ok(formattedUser));
 });
 
 const updateProfile = asyncHandler(async (req, res) => {
   const userId = req.user.id;
-  const { fullName, bio, avatarUrl, coverUrl, course, yearOfStudy } = req.body;
+  const {
+    fullName,
+    bio,
+    avatarUrl,
+    coverUrl,
+    course,
+    yearOfStudy,
+    staffId,
+    graduationYear,
+  } = req.body;
 
   const data = {};
   if (fullName) data.fullName = fullName;
   if (bio !== undefined) data.bio = bio;
   if (avatarUrl) data.avatarUrl = avatarUrl;
   if (coverUrl) data.coverUrl = coverUrl;
-  if (course) data.course = course;
-  if (yearOfStudy) data.yearOfStudy = parseInt(yearOfStudy);
+  if (course !== undefined) data.course = course;
+  if (yearOfStudy !== undefined) data.yearOfStudy = yearOfStudy ? parseInt(yearOfStudy) : null;
+  if (staffId !== undefined) data.staffId = staffId;
+  if (graduationYear !== undefined) data.graduationYear = graduationYear ? parseInt(graduationYear) : null;
 
   const user = await User.update(userId, data);
 
@@ -52,7 +152,11 @@ const updateCampus = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const { campusId, departmentId } = req.body;
 
-  const user = await User.update(userId, { campusId, departmentId });
+  const data = {};
+  if (campusId) data.campusId = campusId;
+  if (departmentId) data.departmentId = departmentId;
+
+  const user = await User.update(userId, data);
 
   res.json(ApiResponse.ok(user, 'Campus updated successfully'));
 });
@@ -123,6 +227,9 @@ const followUser = asyncHandler(async (req, res) => {
     type: 'FOLLOW',
     title: 'New Follower',
     body: `${req.user.fullName} started following you`,
+    data: {
+      followerId: userId,
+    },
   });
 
   res.json(ApiResponse.ok(null, 'Followed successfully'));
@@ -143,6 +250,15 @@ const unfollowUser = asyncHandler(async (req, res) => {
   res.json(ApiResponse.ok(null, 'Unfollowed successfully'));
 });
 
+const isFollowing = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  const following = await Follow.isFollowing(userId, id);
+
+  res.json(ApiResponse.ok({ isFollowing: following }));
+});
+
 module.exports = {
   getProfile,
   getUserById,
@@ -153,4 +269,5 @@ module.exports = {
   getFollowing,
   followUser,
   unfollowUser,
+  isFollowing,
 };

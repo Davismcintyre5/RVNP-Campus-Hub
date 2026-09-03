@@ -28,22 +28,16 @@ const getUserPosts = (id, page = 1, limit = 20) => {
   });
 };
 
-const getCampusPosts = (campusId, page = 1, limit = 20) => {
-  return axiosInstance.get(`/posts/campus/${campusId}`, {
-    params: { page, limit },
-  });
+const reactToPost = (id, type) => {
+  return axiosInstance.post(`/posts/${id}/react`, { type });
 };
 
-const likePost = (id) => {
-  return axiosInstance.post(`/posts/${id}/like`);
+const removeReaction = (id) => {
+  return axiosInstance.delete(`/posts/${id}/react`);
 };
 
-const unlikePost = (id) => {
-  return axiosInstance.delete(`/posts/${id}/like`);
-};
-
-const sharePost = (id) => {
-  return axiosInstance.post(`/posts/${id}/share`);
+const sharePost = (id, data = {}) => {
+  return axiosInstance.post(`/posts/${id}/share`, data);
 };
 
 export default {
@@ -53,8 +47,7 @@ export default {
   deletePost,
   getMyPosts,
   getUserPosts,
-  getCampusPosts,
-  likePost,
-  unlikePost,
+  reactToPost,
+  removeReaction,
   sharePost,
 };

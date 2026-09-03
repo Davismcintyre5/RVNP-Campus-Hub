@@ -3,7 +3,26 @@ const prisma = require('../../config/database.js');
 const findById = async (id) => {
   return prisma.user.findUnique({
     where: { id },
-    include: {
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      phoneNumber: true,
+      avatarUrl: true,
+      coverUrl: true,
+      bio: true,
+      role: true,
+      verificationStatus: true,
+      hdmVerified: true,
+      accountStatus: true,
+      campusId: true,
+      departmentId: true,
+      course: true,
+      yearOfStudy: true,
+      staffId: true,
+      graduationYear: true,
+      lastSeen: true,
+      createdAt: true,
       campus: {
         select: {
           id: true,

@@ -29,7 +29,6 @@ const Profile = () => {
   useEffect(() => {
     fetchProfile();
     fetchPosts();
-    fetchReels();
   }, [userId]);
 
   const fetchProfile = async () => {
@@ -61,23 +60,11 @@ const Profile = () => {
     }
   };
 
-  const fetchReels = async () => {
-    try {
-      const response = await userApi.getUserById(userId);
-
-      if (response.data.success) {
-        setReels(response.data.data.reels || []);
-      }
-    } catch (error) {
-      console.error('Failed to load reels:', error.message);
-    }
-  };
-
   const handleFollow = async () => {
     try {
       await userApi.followUser(userId);
       setIsFollowing(true);
-      fetchProfile();
+      await fetchProfile();
     } catch (error) {
       console.error('Follow failed:', error.message);
     }
@@ -87,7 +74,7 @@ const Profile = () => {
     try {
       await userApi.unfollowUser(userId);
       setIsFollowing(false);
-      fetchProfile();
+      await fetchProfile();
     } catch (error) {
       console.error('Unfollow failed:', error.message);
     }
@@ -157,7 +144,7 @@ const Profile = () => {
 
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto">
+      <div className="w-full">
         <ProfileHeader
           user={user}
           isFollowing={isFollowing}

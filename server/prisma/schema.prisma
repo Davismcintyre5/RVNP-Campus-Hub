@@ -143,17 +143,18 @@ model User {
   avatarUrl           String?
   coverUrl            String?
   bio                 String?
-  privacySettings   Json?
   role                Role                @default(STUDENT)
   accountStatus       AccountStatus       @default(ACTIVE)
   verificationStatus  VerificationStatus  @default(PENDING)
   hdmVerified         Boolean             @default(false)
+  isAI                Boolean             @default(false)
   campusId            String?
   departmentId        String?
   course              String?
   yearOfStudy         Int?
   staffId             String?
   graduationYear      Int?
+  privacySettings     Json?
   lastSeen            DateTime?
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
@@ -336,6 +337,7 @@ model Message {
   content        Json?
   readAt         DateTime?
   createdAt      DateTime      @default(now())
+  deliveredAt     DateTime?
   deletedAt      DateTime?
 
   conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
