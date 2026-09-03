@@ -17,6 +17,28 @@ const findById = async (id) => {
           name: true,
         },
       },
+      views: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              avatarUrl: true,
+            },
+          },
+        },
+      },
+      reactions: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              avatarUrl: true,
+            },
+          },
+        },
+      },
     },
   });
 };
@@ -24,15 +46,6 @@ const findById = async (id) => {
 const create = async (data) => {
   return prisma.story.create({
     data,
-    include: {
-      user: {
-        select: {
-          id: true,
-          fullName: true,
-          avatarUrl: true,
-        },
-      },
-    },
   });
 };
 
@@ -65,6 +78,8 @@ const getActiveStories = async ({ campusId = null, userId = null }) => {
           avatarUrl: true,
         },
       },
+      views: true,
+      reactions: true,
     },
   });
 
@@ -82,34 +97,80 @@ const getActiveStories = async ({ campusId = null, userId = null }) => {
   return Object.values(grouped);
 };
 
-const getExpiredStories = async () => {
-  const now = new Date();
-
-  return prisma.story.findMany({
+const addView = async (storyId, userId) => {
+  return prisma.storyView.upsert({
     where: {
-      expiresAt: {
-        lt: now,
+      storyId_userId: {
+        storyId,
+        userId,
+      },
+    },
+    update: {},
+    create: {
+      storyId,
+      userId,
+    },
+  });
+};
+
+const getViewers = async (storyId) => {
+  return prisma.storyView.findMany({
+    where: { storyId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          fullName: true,
+          avatarUrl: true,
+          hdmVerified: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+};
+
+const addReaction = async (storyId, userId, type = 'LIKE') => {
+  return prisma.storyReaction.upsert({
+    where: {
+      storyId_userId: {
+        storyId,
+        userId,
+      },
+    },
+    update: { type },
+    create: {
+      storyId,
+      userId,
+      type,
+    },
+  });
+};
+
+const removeReaction = async (storyId, userId) => {
+  return prisma.storyReaction.delete({
+    where: {
+      storyId_userId: {
+        storyId,
+        userId,
       },
     },
   });
 };
 
-const deleteExpired = async () => {
-  const now = new Date();
-
-  return prisma.story.deleteMany({
-    where: {
-      expiresAt: {
-        lt: now,
+const getReactions = async (storyId) => {
+  return prisma.storyReaction.findMany({
+    where: { storyId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          fullName: true,
+          avatarUrl: true,
+        },
       },
     },
-  });
-};
-
-const incrementView = async (id) => {
-  return prisma.story.update({
-    where: { id },
-    data: { viewCount: { increment: 1 } },
+    orderBy: { createdAt: 'desc' },
   });
 };
 
@@ -118,7 +179,9 @@ module.exports = {
   create,
   softDelete,
   getActiveStories,
-  getExpiredStories,
-  deleteExpired,
-  incrementView,
+  addView,
+  getViewers,
+  addReaction,
+  removeReaction,
+  getReactions,
 };

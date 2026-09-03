@@ -1,20 +1,61 @@
-import { useState } from 'react';
-import { IoImage, IoClose } from 'react-icons/io5';
+import { useState, useRef } from 'react';
+import {
+  IoImage,
+  IoVideocam,
+  IoClose,
+  IoHappy,
+  IoLocation,
+  IoPersonAdd,
+  IoSend,
+} from 'react-icons/io5';
 import Avatar from '../ui/Avatar.jsx';
 import Button from '../ui/Button.jsx';
 import Dropdown from '../ui/Dropdown.jsx';
+import Modal from '../ui/Modal.jsx';
+import VerifiedBadge from '../ui/VerifiedBadge.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useApp } from '../../context/AppContext.jsx';
 import postApi from '../../api/postApi.js';
 import uploadApi from '../../api/uploadApi.js';
+import userApi from '../../api/userApi.js';
+
+const FEELINGS = [
+  { emoji: '😊', label: 'Happy' },
+  { emoji: '😢', label: 'Sad' },
+  { emoji: '😡', label: 'Angry' },
+  { emoji: '😴', label: 'Tired' },
+  { emoji: '🤩', label: 'Excited' },
+  { emoji: '😰', label: 'Anxious' },
+  { emoji: '😍', label: 'Loved' },
+  { emoji: '🤔', label: 'Thoughtful' },
+  { emoji: '🥳', label: 'Celebrating' },
+  { emoji: '😎', label: 'Cool' },
+  { emoji: '🤗', label: 'Grateful' },
+  { emoji: '😤', label: 'Frustrated' },
+];
 
 const PostComposer = ({ onPostCreated }) => {
   const { user } = useAuth();
+  const { campuses } = useApp();
+
   const [text, setText] = useState('');
   const [privacy, setPrivacy] = useState('PUBLIC');
   const [images, setImages] = useState([]);
   const [imageFiles, setImageFiles] = useState([]);
+  const [video, setVideo] = useState(null);
+  const [videoPreview, setVideoPreview] = useState(null);
+  const [feeling, setFeeling] = useState(null);
+  const [location, setLocation] = useState('');
+  const [taggedUsers, setTaggedUsers] = useState([]);
+  const [showFeelingPicker, setShowFeelingPicker] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [showTagPicker, setShowTagPicker] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const videoInputRef = useRef(null);
 
   const privacyOptions = [
     { value: 'PUBLIC', label: 'Public' },
@@ -22,6 +63,11 @@ const PostComposer = ({ onPostCreated }) => {
     { value: 'DEPARTMENT_ONLY', label: 'Department Only' },
     { value: 'FRIENDS_ONLY', label: 'Friends Only' },
   ];
+
+  const locationOptions = campuses.map((campus) => ({
+    value: campus.name,
+    label: campus.name,
+  }));
 
   const handleImageSelect = (e) => {
     const files = Array.from(e.target.files);
@@ -35,19 +81,65 @@ const PostComposer = ({ onPostCreated }) => {
     e.target.value = '';
   };
 
+  const handleVideoSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setVideo(file);
+      setVideoPreview(URL.createObjectURL(file));
+    }
+    e.target.value = '';
+  };
+
   const removeImage = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
     setImageFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const removeVideo = () => {
+    setVideo(null);
+    setVideoPreview(null);
+  };
+
+  const handleSearchUsers = async (query) => {
+    setSearchQuery(query);
+
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      const response = await userApi.searchUsers(query);
+
+      if (response.data.success) {
+        setSearchResults(response.data.data.users || []);
+      }
+    } catch (error) {
+      console.error('User search failed:', error.message);
+    }
+  };
+
+  const handleTagUser = (user) => {
+    if (!taggedUsers.find((u) => u.id === user.id)) {
+      setTaggedUsers((prev) => [...prev, user]);
+    }
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  const removeTag = (userId) => {
+    setTaggedUsers((prev) => prev.filter((u) => u.id !== userId));
+  };
+
   const handleSubmit = async () => {
-    if (!text.trim() && imageFiles.length === 0) return;
+    if (!text.trim() && imageFiles.length === 0 && !video) return;
 
     setLoading(true);
     setError('');
 
     try {
       let uploadedImages = [];
+      let uploadedVideo = null;
 
       if (imageFiles.length > 0) {
         const uploadResponse = await uploadApi.uploadMultiple(imageFiles);
@@ -56,10 +148,24 @@ const PostComposer = ({ onPostCreated }) => {
         }
       }
 
+      if (video) {
+        const uploadResponse = await uploadApi.uploadSingle(video);
+        if (uploadResponse.data.success) {
+          uploadedVideo = uploadResponse.data.data.url;
+        }
+      }
+
       const payload = {
         content: {
           text: text.trim(),
           images: uploadedImages,
+          video: uploadedVideo,
+          feeling: feeling,
+          location: location,
+          taggedUsers: taggedUsers.map((u) => ({
+            id: u.id,
+            fullName: u.fullName,
+          })),
         },
         privacy,
       };
@@ -70,6 +176,11 @@ const PostComposer = ({ onPostCreated }) => {
         setText('');
         setImages([]);
         setImageFiles([]);
+        setVideo(null);
+        setVideoPreview(null);
+        setFeeling(null);
+        setLocation('');
+        setTaggedUsers([]);
         onPostCreated?.(response.data.data);
       }
     } catch (error) {
@@ -90,14 +201,62 @@ const PostComposer = ({ onPostCreated }) => {
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="What's on your mind?"
-            rows={2}
-            maxLength={500}
+            placeholder={feeling ? `What's on your mind, feeling ${feeling.label}?` : "What's on your mind?"}
+            rows={3}
+            maxLength={1000}
             className="w-full max-w-full bg-bg-secondary text-text-primary rounded-lg p-2 sm:p-3 resize-none focus:outline-none placeholder:text-text-muted text-sm sm:text-base box-border"
           />
 
           {error && (
-            <p className="text-sm text-red-500 mt-2">{error}</p>
+            <p className="text-sm text-rvnp-red mt-2">{error}</p>
+          )}
+
+          {feeling && (
+            <div className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 rounded-full bg-bg-secondary text-sm text-text-primary">
+              <span>{feeling.emoji}</span>
+              <span>Feeling {feeling.label}</span>
+              <button onClick={() => setFeeling(null)} className="text-text-muted">
+                <IoClose size={14} />
+              </button>
+            </div>
+          )}
+
+          {location && (
+            <div className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 rounded-full bg-bg-secondary text-sm text-text-primary">
+              <IoLocation size={14} className="text-rvnp-green" />
+              <span>At {location}</span>
+              <button onClick={() => setLocation('')} className="text-text-muted">
+                <IoClose size={14} />
+              </button>
+            </div>
+          )}
+
+          {taggedUsers.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {taggedUsers.map((tagged) => (
+                <div
+                  key={tagged.id}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-bg-secondary text-sm text-text-primary"
+                >
+                  <span>With {tagged.fullName}</span>
+                  <button onClick={() => removeTag(tagged.id)} className="text-text-muted">
+                    <IoClose size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {videoPreview && (
+            <div className="relative mt-2">
+              <video src={videoPreview} className="w-full rounded-lg max-h-64 object-cover" controls />
+              <button
+                onClick={removeVideo}
+                className="absolute top-2 right-2 p-1 rounded-full bg-black bg-opacity-50 text-white"
+              >
+                <IoClose size={16} />
+              </button>
+            </div>
           )}
 
           {images.length > 0 && (
@@ -121,17 +280,54 @@ const PostComposer = ({ onPostCreated }) => {
             </div>
           )}
 
-          <div className="flex items-center justify-between mt-2 sm:mt-3 gap-2 flex-wrap">
-            <label className="p-2 rounded-lg hover:bg-bg-secondary text-text-muted cursor-pointer shrink-0">
-              <IoImage size={20} />
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={handleImageSelect}
-              />
-            </label>
+          <div className="flex items-center justify-between mt-2 sm:mt-3 gap-2 flex-wrap border-t border-border-color pt-2">
+            <div className="flex gap-1">
+              <label className="p-2 rounded-lg hover:bg-bg-secondary text-text-muted cursor-pointer shrink-0" title="Add Image">
+                <IoImage size={18} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleImageSelect}
+                />
+              </label>
+
+              <label className="p-2 rounded-lg hover:bg-bg-secondary text-text-muted cursor-pointer shrink-0" title="Add Video">
+                <IoVideocam size={18} />
+                <input
+                  ref={videoInputRef}
+                  type="file"
+                  accept="video/*"
+                  className="hidden"
+                  onChange={handleVideoSelect}
+                />
+              </label>
+
+              <button
+                onClick={() => setShowFeelingPicker(true)}
+                className="p-2 rounded-lg hover:bg-bg-secondary text-text-muted shrink-0"
+                title="Add Feeling"
+              >
+                <IoHappy size={18} />
+              </button>
+
+              <button
+                onClick={() => setShowLocationPicker(true)}
+                className="p-2 rounded-lg hover:bg-bg-secondary text-text-muted shrink-0"
+                title="Add Location"
+              >
+                <IoLocation size={18} />
+              </button>
+
+              <button
+                onClick={() => setShowTagPicker(true)}
+                className="p-2 rounded-lg hover:bg-bg-secondary text-text-muted shrink-0"
+                title="Tag People"
+              >
+                <IoPersonAdd size={18} />
+              </button>
+            </div>
 
             <div className="flex items-center gap-2 shrink-0">
               <div className="w-24 sm:w-28">
@@ -149,6 +345,84 @@ const PostComposer = ({ onPostCreated }) => {
           </div>
         </div>
       </div>
+
+      {/* Feeling Picker Modal */}
+      <Modal isOpen={showFeelingPicker} onClose={() => setShowFeelingPicker(false)} title="How are you feeling?" size="sm">
+        <div className="grid grid-cols-3 gap-2">
+          {FEELINGS.map((feel) => (
+            <button
+              key={feel.label}
+              onClick={() => {
+                setFeeling(feel);
+                setShowFeelingPicker(false);
+              }}
+              className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-bg-secondary transition-all"
+            >
+              <span className="text-3xl">{feel.emoji}</span>
+              <span className="text-xs text-text-secondary">{feel.label}</span>
+            </button>
+          ))}
+        </div>
+      </Modal>
+
+      {/* Location Picker Modal */}
+      <Modal isOpen={showLocationPicker} onClose={() => setShowLocationPicker(false)} title="Add Location" size="sm">
+        <div className="space-y-1">
+          {locationOptions.map((loc) => (
+            <button
+              key={loc.value}
+              onClick={() => {
+                setLocation(loc.value);
+                setShowLocationPicker(false);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-bg-secondary transition-all text-left"
+            >
+              <IoLocation size={18} className="text-rvnp-green" />
+              <span className="text-text-primary text-sm">{loc.label}</span>
+            </button>
+          ))}
+        </div>
+      </Modal>
+
+      {/* Tag People Modal */}
+      <Modal isOpen={showTagPicker} onClose={() => setShowTagPicker(false)} title="Tag People" size="sm">
+        <div className="space-y-3">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => handleSearchUsers(e.target.value)}
+            placeholder="Search for people..."
+            className="w-full px-3 py-2 rounded-lg bg-bg-secondary text-text-primary border border-border-color focus:outline-none"
+          />
+
+          {taggedUsers.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {taggedUsers.map((tagged) => (
+                <div key={tagged.id} className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-rvnp-green text-rvnp-white text-sm">
+                  <span>{tagged.fullName}</span>
+                  <button onClick={() => removeTag(tagged.id)}>
+                    <IoClose size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="space-y-1 max-h-48 overflow-y-auto">
+            {searchResults.map((result) => (
+              <button
+                key={result.id}
+                onClick={() => handleTagUser(result)}
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-bg-secondary transition-all text-left"
+              >
+                <Avatar src={result.avatarUrl} name={result.fullName} size="sm" />
+                <span className="text-text-primary text-sm flex-1">{result.fullName}</span>
+                {result.hdmVerified && <VerifiedBadge size={12} />}
+              </button>
+            ))}
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

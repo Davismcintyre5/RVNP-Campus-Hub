@@ -23,6 +23,17 @@ const findById = async (id) => {
           name: true,
         },
       },
+      sharedFrom: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              avatarUrl: true,
+            },
+          },
+        },
+      },
       comments: {
         take: 10,
         orderBy: { createdAt: 'desc' },
@@ -55,6 +66,44 @@ const create = async (data) => {
           id: true,
           fullName: true,
           avatarUrl: true,
+        },
+      },
+    },
+  });
+};
+
+const createShare = async (postId, userId, content = null) => {
+  const originalPost = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { content: true, privacy: true },
+  });
+
+  if (!originalPost) return null;
+
+  return prisma.post.create({
+    data: {
+      userId,
+      content: content || { text: '' },
+      privacy: originalPost.privacy,
+      sharedFromId: postId,
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          fullName: true,
+          avatarUrl: true,
+        },
+      },
+      sharedFrom: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              avatarUrl: true,
+            },
+          },
         },
       },
     },
@@ -97,40 +146,15 @@ const findByUser = async (userId, { page = 1, limit = 20 }) => {
             avatarUrl: true,
           },
         },
-        _count: {
-          select: {
-            comments: true,
-            reactions: true,
-          },
-        },
-      },
-    }),
-    prisma.post.count({ where }),
-  ]);
-
-  return { posts, total };
-};
-
-const findByCampus = async (campusId, { page = 1, limit = 20 }) => {
-  const skip = (page - 1) * limit;
-
-  const where = {
-    campusId,
-    deletedAt: null,
-  };
-
-  const [posts, total] = await Promise.all([
-    prisma.post.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: {
-            id: true,
-            fullName: true,
-            avatarUrl: true,
+        sharedFrom: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                avatarUrl: true,
+              },
+            },
           },
         },
         _count: {
@@ -185,10 +209,10 @@ const incrementShare = async (id) => {
 module.exports = {
   findById,
   create,
+  createShare,
   update,
   softDelete,
   findByUser,
-  findByCampus,
   incrementLike,
   decrementLike,
   incrementComment,

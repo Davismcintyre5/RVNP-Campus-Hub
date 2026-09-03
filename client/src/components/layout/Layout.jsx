@@ -8,14 +8,16 @@ const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-bg-primary text-text-primary flex flex-col">
+    <div className="min-h-screen bg-bg-primary text-text-primary flex flex-col overflow-x-hidden">
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
 
-      <div className="flex flex-1">
+      <div className="flex flex-1 w-full">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
         <main className="flex-1 min-w-0 w-full px-3 sm:px-4 py-4 pb-24 lg:pb-4">
-          {children}
+          <div className="w-full max-w-full">
+            {children}
+          </div>
         </main>
 
         <RightPanel />

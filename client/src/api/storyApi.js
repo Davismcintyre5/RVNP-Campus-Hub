@@ -18,6 +18,22 @@ const getStoryById = (id) => {
   return axiosInstance.get(`/stories/${id}`);
 };
 
+const getViewers = (storyId) => {
+  return axiosInstance.get(`/stories/${storyId}/viewers`);
+};
+
+const getReactions = (storyId) => {
+  return axiosInstance.get(`/stories/${storyId}/reactions`);
+};
+
+const reactToStory = (storyId, type = 'LIKE') => {
+  return axiosInstance.post(`/stories/${storyId}/react`, { type });
+};
+
+const removeReaction = (storyId) => {
+  return axiosInstance.delete(`/stories/${storyId}/react`);
+};
+
 const deleteStory = (id) => {
   return axiosInstance.delete(`/stories/${id}`);
 };
@@ -27,5 +43,9 @@ export default {
   getActiveStories,
   getMyStories,
   getStoryById,
+  getViewers,
+  getReactions,
+  reactToStory,
+  removeReaction,
   deleteStory,
 };

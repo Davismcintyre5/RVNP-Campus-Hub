@@ -57,6 +57,19 @@ const createComment = asyncHandler(async (req, res) => {
     }
   }
 
+  if (parentId) {
+    const parentComment = await Comment.findById(parentId);
+
+    if (parentComment && parentComment.userId !== userId) {
+      await notificationService.createNotification({
+        userId: parentComment.userId,
+        type: 'COMMENT',
+        title: 'New Reply',
+        body: `${req.user.fullName} replied to your comment`,
+      });
+    }
+  }
+
   res.status(201).json(ApiResponse.created(comment));
 });
 
@@ -96,10 +109,26 @@ const getReplies = asyncHandler(async (req, res) => {
   res.json(ApiResponse.ok(data));
 });
 
+const getCommentById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const comment = await Comment.findById(id);
+
+  if (!comment || comment.deletedAt) {
+    throw ApiError.notFound('Comment not found');
+  }
+
+  res.json(ApiResponse.ok(comment));
+});
+
 const updateComment = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { content } = req.body;
   const userId = req.user.id;
+
+  if (!content) {
+    throw ApiError.badRequest('Comment content is required');
+  }
 
   const comment = await Comment.findById(id);
 
@@ -190,13 +219,23 @@ const unlikeComment = asyncHandler(async (req, res) => {
   res.json(ApiResponse.ok(null, 'Comment unliked'));
 });
 
+const getCommentLikes = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const reactions = await Reaction.findByComment(id);
+
+  res.json(ApiResponse.ok(reactions));
+});
+
 module.exports = {
   createComment,
   getPostComments,
   getReelComments,
   getReplies,
+  getCommentById,
   updateComment,
   deleteComment,
   likeComment,
   unlikeComment,
+  getCommentLikes,
 };

@@ -54,9 +54,58 @@ const getStoryById = asyncHandler(async (req, res) => {
     throw ApiError.notFound('Story expired');
   }
 
-  await Story.incrementView(id);
+  await Story.addView(id, req.user.id);
 
   res.json(ApiResponse.ok(story));
+});
+
+const getViewers = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const story = await Story.findById(id);
+
+  if (!story) {
+    throw ApiError.notFound('Story not found');
+  }
+
+  if (story.userId !== req.user.id) {
+    throw ApiError.forbidden('Only story owner can view viewers');
+  }
+
+  const viewers = await Story.getViewers(id);
+
+  res.json(ApiResponse.ok(viewers));
+});
+
+const getReactions = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const reactions = await Story.getReactions(id);
+
+  res.json(ApiResponse.ok(reactions));
+});
+
+const reactToStory = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { type } = req.body;
+
+  const story = await Story.findById(id);
+
+  if (!story) {
+    throw ApiError.notFound('Story not found');
+  }
+
+  const reaction = await Story.addReaction(id, req.user.id, type || 'LIKE');
+
+  res.json(ApiResponse.ok(reaction, 'Reaction added'));
+});
+
+const removeReaction = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  await Story.removeReaction(id, req.user.id);
+
+  res.json(ApiResponse.ok(null, 'Reaction removed'));
 });
 
 const deleteStory = asyncHandler(async (req, res) => {
@@ -83,5 +132,9 @@ module.exports = {
   getActiveStories,
   getMyStories,
   getStoryById,
+  getViewers,
+  getReactions,
+  reactToStory,
+  removeReaction,
   deleteStory,
 };

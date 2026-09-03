@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout.jsx';
+import StoriesBar from '../components/stories/StoriesBar.jsx';
 import PostComposer from '../components/posts/PostComposer.jsx';
 import PostCard from '../components/posts/PostCard.jsx';
 import Spinner from '../components/ui/Spinner.jsx';
@@ -99,6 +100,8 @@ const Feed = () => {
   return (
     <Layout>
       <div className="space-y-4 w-full">
+        <StoriesBar />
+
         <PostComposer onPostCreated={handlePostCreated} />
 
         <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />

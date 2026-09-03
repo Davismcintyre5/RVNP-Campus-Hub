@@ -12,11 +12,11 @@ const Button = ({
   className = '',
 }) => {
   const variants = {
-    primary: 'bg-bg-secondary text-text-primary border border-border-color hover:opacity-90',
-    secondary: 'bg-bg-tertiary text-text-secondary border border-border-color hover:opacity-90',
-    outline: 'bg-transparent text-text-primary border border-border-color hover:bg-bg-secondary',
+    primary: 'bg-rvnp-green text-rvnp-white hover:bg-rvnp-green-light border border-rvnp-green',
+    secondary: 'bg-bg-tertiary text-text-primary border border-border-color hover:opacity-90',
+    outline: 'bg-transparent text-text-primary border border-rvnp-green hover:bg-bg-secondary',
     ghost: 'bg-transparent text-text-secondary hover:bg-bg-secondary',
-    danger: 'bg-red-500 text-white hover:opacity-90',
+    danger: 'bg-rvnp-red text-rvnp-white hover:opacity-90 border border-rvnp-red',
   };
 
   const sizes = {

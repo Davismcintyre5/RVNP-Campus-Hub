@@ -12,6 +12,11 @@ export default {
         'text-muted': 'var(--text-muted)',
         'border-color': 'var(--border-color)',
         'hover-color': 'var(--hover-color)',
+        'rvnp-green': '#006400',
+        'rvnp-green-light': '#008000',
+        'rvnp-green-dark': '#004D00',
+        'rvnp-red': '#CC0000',
+        'rvnp-white': '#FFFFFF',
       },
       fontFamily: {
         body: 'var(--font-body)',

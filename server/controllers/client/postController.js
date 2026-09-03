@@ -162,6 +162,8 @@ const unlikePost = asyncHandler(async (req, res) => {
 
 const sharePost = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { content, type } = req.body;
+  const userId = req.user.id;
 
   const post = await Post.findById(id);
 
@@ -170,6 +172,14 @@ const sharePost = asyncHandler(async (req, res) => {
   }
 
   await Post.incrementShare(id);
+
+  if (type === 'FEED') {
+    const sharedPost = await Post.createShare(id, userId, content);
+
+    return res.status(201).json(
+      ApiResponse.created(sharedPost, 'Post shared to feed')
+    );
+  }
 
   res.json(ApiResponse.ok(null, 'Post shared'));
 });

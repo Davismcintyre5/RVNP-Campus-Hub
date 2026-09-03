@@ -49,6 +49,7 @@ enum ConversationType {
 enum ReactionType {
   LIKE
   LOVE
+  CARE
   HAHA
   WOW
   SAD
@@ -142,10 +143,11 @@ model User {
   avatarUrl           String?
   coverUrl            String?
   bio                 String?
+  privacySettings   Json?
   role                Role                @default(STUDENT)
   accountStatus       AccountStatus       @default(ACTIVE)
   verificationStatus  VerificationStatus  @default(PENDING)
-  hdmVerified     Boolean             @default(false)
+  hdmVerified         Boolean             @default(false)
   campusId            String?
   departmentId        String?
   course              String?
@@ -164,6 +166,8 @@ model User {
   comments            Comment[]
   reactions           Reaction[]
   stories             Story[]
+  storyViews          StoryView[]
+  storyReactions      StoryReaction[]
   sentMessages        Message[]           @relation("SentMessages")
   receivedMessages    Message[]           @relation("ReceivedMessages")
   conversations       ConversationParticipant[]
@@ -202,6 +206,9 @@ model Post {
   likeCount    Int          @default(0)
   commentCount Int          @default(0)
   shareCount   Int          @default(0)
+  sharedFromId  String?
+  sharedFrom    Post?    @relation("PostShares", fields: [sharedFromId], references: [id], onDelete: SetNull)
+  shares        Post[]   @relation("PostShares")
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   deletedAt    DateTime?
@@ -388,10 +395,39 @@ model Story {
 
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   campus      Campus?       @relation(fields: [campusId], references: [id], onDelete: SetNull)
+  views       StoryView[]
+  reactions   StoryReaction[]
 
   @@index([userId])
   @@index([expiresAt])
   @@map("stories")
+}
+
+model StoryView {
+  id        String   @id @default(uuid())
+  storyId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, userId])
+  @@map("story_views")
+}
+
+model StoryReaction {
+  id        String       @id @default(uuid())
+  storyId   String
+  userId    String
+  type      ReactionType @default(LIKE)
+  createdAt DateTime     @default(now())
+
+  story     Story        @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, userId])
+  @@map("story_reactions")
 }
 
 model Event {

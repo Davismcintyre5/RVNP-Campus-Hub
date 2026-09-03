@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { IoCamera } from 'react-icons/io5';
+import { useNavigate, Link } from 'react-router-dom';
+import { IoCamera, IoChevronForward } from 'react-icons/io5';
 import Layout from '../components/layout/Layout.jsx';
 import Button from '../components/ui/Button.jsx';
 import Input from '../components/ui/Input.jsx';
@@ -133,8 +133,8 @@ const Settings = () => {
 
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-heading font-bold text-text-primary mb-6">
+      <div className="w-full space-y-4">
+        <h1 className="text-2xl font-heading font-bold text-text-primary">
           Settings
         </h1>
 
@@ -145,8 +145,8 @@ const Settings = () => {
             onImageSelect={handleCoverUpload}
           />
 
-          <div className="p-6">
-            <div className="relative -mt-16 mb-4 z-10">
+          <div className="p-4 sm:p-6">
+            <div className="relative -mt-14 sm:-mt-16 mb-4 z-10">
               <div
                 className="inline-block rounded-full border-4 border-bg-primary cursor-pointer relative"
                 onClick={handleAvatarClick}
@@ -177,13 +177,13 @@ const Settings = () => {
 
             <div className="space-y-4">
               {error && (
-                <div className="p-3 rounded-lg bg-red-500 bg-opacity-10 border border-red-500 text-red-500 text-sm">
+                <div className="p-3 rounded-lg bg-rvnp-red bg-opacity-10 border border-rvnp-red text-rvnp-red text-sm">
                   {error}
                 </div>
               )}
 
               {success && (
-                <div className="p-3 rounded-lg bg-green-500 bg-opacity-10 border border-green-500 text-green-500 text-sm">
+                <div className="p-3 rounded-lg bg-rvnp-green bg-opacity-10 border border-rvnp-green text-rvnp-green text-sm">
                   {success}
                 </div>
               )}
@@ -222,7 +222,20 @@ const Settings = () => {
           </div>
         </div>
 
-        <div className="mt-6 p-4 bg-bg-primary border border-border-color rounded-xl">
+        <Link
+          to="/privacy"
+          className="flex items-center justify-between p-4 bg-bg-primary border border-border-color rounded-xl hover:bg-bg-secondary transition-all"
+        >
+          <div>
+            <h3 className="font-medium text-text-primary">Privacy Settings</h3>
+            <p className="text-xs text-text-muted mt-0.5">
+              Control who can see your content and interact with you
+            </p>
+          </div>
+          <IoChevronForward size={20} className="text-text-muted shrink-0" />
+        </Link>
+
+        <div className="p-4 bg-bg-primary border border-rvnp-red rounded-xl">
           <h3 className="text-lg font-heading font-semibold text-text-primary mb-2">
             Danger Zone
           </h3>

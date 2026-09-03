@@ -2,6 +2,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 import { AppProvider } from './context/AppContext.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
+import { NotificationProvider } from './context/NotificationContext.jsx';
 import { SocketProvider } from './context/SocketContext.jsx';
 import AppRoutes from './routes/AppRoutes.jsx';
 
@@ -16,9 +17,11 @@ const App = () => {
       <ThemeProvider>
         <AppProvider>
           <AuthProvider>
-            <SocketProvider>
-              <AppRoutes />
-            </SocketProvider>
+            <NotificationProvider>
+              <SocketProvider>
+                <AppRoutes />
+              </SocketProvider>
+            </NotificationProvider>
           </AuthProvider>
         </AppProvider>
       </ThemeProvider>
