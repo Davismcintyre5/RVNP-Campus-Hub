@@ -6,6 +6,7 @@ const requireAuth = require('../../middleware/client/requireAuth.js');
 router.use(requireAuth);
 
 router.get('/', feedController.getFeed);
+router.get('/reels', feedController.getFeedReels);
 router.get('/campus/:campusId', feedController.getCampusFeed);
 
 module.exports = router;

@@ -12,7 +12,14 @@ const getCampusFeed = (campusId, page = 1, limit = 20) => {
   });
 };
 
+const getFeedReels = (limit = 8) => {
+  return axiosInstance.get('/feed/reels', {
+    params: { limit },
+  });
+};
+
 export default {
   getFeed,
   getCampusFeed,
+  getFeedReels,
 };

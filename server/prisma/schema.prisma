@@ -181,6 +181,7 @@ model User {
   following           Follow[]            @relation("Followers")
   reports             Report[]
   auditLogs           AuditLog[]
+  groupPosts    GroupPost[]
 
   @@map("users")
 }
@@ -231,6 +232,8 @@ model Reel {
   videoUrl     String
   thumbnailUrl String?
   caption      String?
+  content      Json?
+  privacy      String    @default("PUBLIC")
   userId       String
   campusId     String?
   viewCount    Int       @default(0)
@@ -259,6 +262,7 @@ model Comment {
   userId      String
   postId      String?
   reelId      String?
+  groupPostId String?
   parentId    String?
   likeCount   Int       @default(0)
   createdAt   DateTime  @default(now())
@@ -268,6 +272,7 @@ model Comment {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   post        Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
   reel        Reel?     @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  groupPost   GroupPost? @relation(fields: [groupPostId], references: [id], onDelete: Cascade)
   parent      Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies     Comment[] @relation("CommentReplies")
   reactions   Reaction[]
@@ -276,6 +281,7 @@ model Comment {
   @@index([userId])
   @@index([postId])
   @@index([reelId])
+  @@index([groupPostId])
   @@map("comments")
 }
 
@@ -355,9 +361,13 @@ model Group {
   name          String
   description   String?
   avatarUrl     String?
+  coverUrl      String?
+  category      String       @default("General")
+  privacy       String       @default("PUBLIC")
   campusId      String?
   createdBy     String
   memberCount   Int          @default(0)
+  postCount     Int          @default(0)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   deletedAt     DateTime?
@@ -365,10 +375,32 @@ model Group {
   campus        Campus?      @relation(fields: [campusId], references: [id], onDelete: SetNull)
   creator       User         @relation(fields: [createdBy], references: [id], onDelete: Cascade)
   members       GroupMember[]
+  posts         GroupPost[]
   conversations Conversation[]
 
   @@index([campusId])
+  @@index([category])
   @@map("groups")
+}
+
+model GroupPost {
+  id          String    @id @default(uuid())
+  content     Json?
+  groupId     String
+  userId      String
+  likeCount   Int       @default(0)
+  commentCount Int      @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  group       Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments    Comment[]
+
+  @@index([groupId])
+  @@index([userId])
+  @@map("group_posts")
 }
 
 model GroupMember {

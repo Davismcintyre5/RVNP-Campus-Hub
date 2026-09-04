@@ -6,7 +6,7 @@ const asyncHandler = require('../../utils/asyncHandler.js');
 const notificationService = require('../../services/notificationService.js');
 
 const createReel = asyncHandler(async (req, res) => {
-  const { videoUrl, thumbnailUrl, caption, campusId } = req.body;
+  const { videoUrl, thumbnailUrl, caption, content, privacy, campusId } = req.body;
   const userId = req.user.id;
 
   if (!videoUrl) {
@@ -17,6 +17,8 @@ const createReel = asyncHandler(async (req, res) => {
     videoUrl,
     thumbnailUrl,
     caption,
+    content: content || null,
+    privacy: privacy || 'PUBLIC',
     userId,
     campusId: campusId || req.user.campusId,
   });
@@ -52,7 +54,7 @@ const getReelById = asyncHandler(async (req, res) => {
 
 const updateReel = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { caption, thumbnailUrl } = req.body;
+  const { caption, thumbnailUrl, content, privacy } = req.body;
   const userId = req.user.id;
 
   const reel = await Reel.findById(id);
@@ -68,6 +70,8 @@ const updateReel = asyncHandler(async (req, res) => {
   const data = {};
   if (caption !== undefined) data.caption = caption;
   if (thumbnailUrl) data.thumbnailUrl = thumbnailUrl;
+  if (content) data.content = content;
+  if (privacy) data.privacy = privacy;
 
   const updated = await Reel.update(id, data);
 
@@ -104,8 +108,21 @@ const getMyReels = asyncHandler(async (req, res) => {
   res.json(ApiResponse.ok(data));
 });
 
-const likeReel = asyncHandler(async (req, res) => {
+const getUserReels = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const { page, limit } = req.query;
+
+  const data = await Reel.findByUser(userId, {
+    page: parseInt(page) || 1,
+    limit: parseInt(limit) || 10,
+  });
+
+  res.json(ApiResponse.ok(data));
+});
+
+const reactToReel = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { type } = req.body;
   const userId = req.user.id;
 
   const reel = await Reel.findById(id);
@@ -117,38 +134,66 @@ const likeReel = asyncHandler(async (req, res) => {
   const existing = await Reaction.findExisting(userId, null, id, null);
 
   if (existing) {
-    throw ApiError.conflict('Already liked this reel');
+    await Reaction.remove(existing.id);
+    await Reel.decrementLike(id);
   }
 
-  await Reaction.create({ userId, reelId: id, type: 'LIKE' });
+  const reaction = await Reaction.create({
+    userId,
+    reelId: id,
+    type: type || 'LIKE',
+  });
+
   await Reel.incrementLike(id);
 
   if (reel.userId !== userId) {
     await notificationService.createNotification({
       userId: reel.userId,
       type: 'LIKE',
-      title: 'New Like',
-      body: `${req.user.fullName} liked your reel`,
+      title: 'New Reaction',
+      body: `${req.user.fullName} reacted to your reel`,
     });
   }
 
-  res.json(ApiResponse.ok(null, 'Reel liked'));
+  res.json(ApiResponse.ok(reaction, 'Reaction added'));
 });
 
-const unlikeReel = asyncHandler(async (req, res) => {
+const removeReaction = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;
 
   const existing = await Reaction.findExisting(userId, null, id, null);
 
   if (!existing) {
-    throw ApiError.badRequest('Not liked this reel');
+    throw ApiError.badRequest('No reaction found');
   }
 
   await Reaction.remove(existing.id);
   await Reel.decrementLike(id);
 
-  res.json(ApiResponse.ok(null, 'Reel unliked'));
+  res.json(ApiResponse.ok(null, 'Reaction removed'));
+});
+
+const incrementViewCount = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  await Reel.incrementView(id);
+
+  res.json(ApiResponse.ok(null, 'View counted'));
+});
+
+const shareReel = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const reel = await Reel.findById(id);
+
+  if (!reel || reel.deletedAt) {
+    throw ApiError.notFound('Reel not found');
+  }
+
+  await Reel.incrementShare(id);
+
+  res.json(ApiResponse.ok(null, 'Reel shared'));
 });
 
 module.exports = {
@@ -158,6 +203,9 @@ module.exports = {
   updateReel,
   deleteReel,
   getMyReels,
-  likeReel,
-  unlikeReel,
+  getUserReels,
+  reactToReel,
+  removeReaction,
+  incrementViewCount,
+  shareReel,
 };

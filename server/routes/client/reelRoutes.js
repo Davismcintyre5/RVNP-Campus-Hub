@@ -8,10 +8,13 @@ router.use(requireAuth);
 router.post('/', reelController.createReel);
 router.get('/feed', reelController.getReelFeed);
 router.get('/my-reels', reelController.getMyReels);
+router.get('/user/:userId', reelController.getUserReels);
 router.get('/:id', reelController.getReelById);
 router.put('/:id', reelController.updateReel);
 router.delete('/:id', reelController.deleteReel);
-router.post('/:id/like', reelController.likeReel);
-router.delete('/:id/like', reelController.unlikeReel);
+router.post('/:id/react', reelController.reactToReel);
+router.delete('/:id/react', reelController.removeReaction);
+router.post('/:id/view', reelController.incrementViewCount);
+router.post('/:id/share', reelController.shareReel);
 
 module.exports = router;

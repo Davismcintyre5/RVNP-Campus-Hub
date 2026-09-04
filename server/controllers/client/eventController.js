@@ -3,6 +3,7 @@ const ApiResponse = require('../../utils/ApiResponse.js');
 const ApiError = require('../../utils/ApiError.js');
 const asyncHandler = require('../../utils/asyncHandler.js');
 const notificationService = require('../../services/notificationService.js');
+const prisma = require('../../config/database.js');
 
 const createEvent = asyncHandler(async (req, res) => {
   const { title, description, location, campusId, startTime, endTime } = req.body;
@@ -10,6 +11,10 @@ const createEvent = asyncHandler(async (req, res) => {
 
   if (!title || !startTime || !endTime) {
     throw ApiError.badRequest('Title, start time, and end time are required');
+  }
+
+  if (req.user.role !== 'ADMIN' && req.user.role !== 'SUPER_ADMIN' && req.user.role !== 'STAFF') {
+    throw ApiError.forbidden('Only admin or staff can create events');
   }
 
   const event = await Event.create({
@@ -21,6 +26,23 @@ const createEvent = asyncHandler(async (req, res) => {
     startTime: new Date(startTime),
     endTime: new Date(endTime),
   });
+
+  const campusUsers = await prisma.user.findMany({
+    where: {
+      campusId: campusId || req.user.campusId,
+      accountStatus: 'ACTIVE',
+    },
+    select: { id: true },
+  });
+
+  for (const user of campusUsers) {
+    await notificationService.createNotification({
+      userId: user.id,
+      type: 'EVENT_REMINDER',
+      title: 'New Event',
+      body: `${title} is happening!`,
+    });
+  }
 
   res.status(201).json(ApiResponse.created(event));
 });

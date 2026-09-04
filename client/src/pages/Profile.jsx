@@ -9,6 +9,7 @@ import EmptyState from '../components/ui/EmptyState.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import userApi from '../api/userApi.js';
 import postApi from '../api/postApi.js';
+import reelApi from '../api/reelApi.js';
 import uploadApi from '../api/uploadApi.js';
 
 const Profile = () => {
@@ -20,6 +21,7 @@ const Profile = () => {
   const [posts, setPosts] = useState([]);
   const [reels, setReels] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingReels, setLoadingReels] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -30,6 +32,12 @@ const Profile = () => {
     fetchProfile();
     fetchPosts();
   }, [userId]);
+
+  useEffect(() => {
+    if (activeTab === 'reels') {
+      fetchReels();
+    }
+  }, [activeTab, userId]);
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -57,6 +65,22 @@ const Profile = () => {
       }
     } catch (error) {
       console.error('Failed to load posts:', error.message);
+    }
+  };
+
+  const fetchReels = async () => {
+    setLoadingReels(true);
+
+    try {
+      const response = await reelApi.getUserReels(userId);
+
+      if (response.data.success) {
+        setReels(response.data.data.reels || []);
+      }
+    } catch (error) {
+      console.error('Failed to load reels:', error.message);
+    } finally {
+      setLoadingReels(false);
     }
   };
 
@@ -92,7 +116,6 @@ const Profile = () => {
 
       if (response.data.success) {
         const coverUrl = response.data.data.url;
-
         await userApi.updateProfile({ coverUrl });
 
         if (isOwnProfile) {
@@ -116,7 +139,6 @@ const Profile = () => {
 
       if (response.data.success) {
         const avatarUrl = response.data.data.url;
-
         await userApi.updateProfile({ avatarUrl });
 
         if (isOwnProfile) {
@@ -167,18 +189,25 @@ const Profile = () => {
                 description="This user hasn't posted anything."
               />
             )
+          ) : loadingReels ? (
+            <div className="flex justify-center py-10">
+              <Spinner size="md" />
+            </div>
           ) : reels.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {reels.map((reel) => (
                 <div
                   key={reel.id}
-                  className="aspect-video rounded-lg overflow-hidden bg-bg-secondary"
+                  className="relative aspect-[9/16] rounded-xl overflow-hidden bg-bg-secondary"
                 >
-                  <video
-                    src={reel.videoUrl}
-                    className="w-full h-full object-cover"
-                    controls
-                  />
+                  {reel.thumbnailUrl ? (
+                    <img src={reel.thumbnailUrl} alt={reel.caption} className="w-full h-full object-cover" />
+                  ) : (
+                    <video src={reel.videoUrl} className="w-full h-full object-cover" muted />
+                  )}
+                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black to-transparent">
+                    <p className="text-white text-xs truncate">{reel.caption || 'Reel'}</p>
+                  </div>
                 </div>
               ))}
             </div>

@@ -94,7 +94,7 @@ const ReactionSummary = ({ postId = null, reelId = null, commentId = null }) => 
     <>
       <button
         onClick={handleOpenModal}
-        className="flex items-center gap-1 text-sm text-text-muted hover:text-text-primary mt-1"
+        className="flex items-center gap-1 text-xs sm:text-sm text-text-muted hover:text-text-primary"
       >
         {summary.topEmojis.map((emoji, index) => (
           <span key={index}>{emoji}</span>
@@ -104,11 +104,7 @@ const ReactionSummary = ({ postId = null, reelId = null, commentId = null }) => 
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black bg-opacity-50"
-            onClick={() => setShowModal(false)}
-          />
-
+          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowModal(false)} />
           <div className="relative w-full max-w-md mx-4 bg-bg-primary rounded-xl max-h-[80vh] flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-border-color">
               <div className="flex gap-1">
@@ -116,10 +112,7 @@ const ReactionSummary = ({ postId = null, reelId = null, commentId = null }) => 
                   <span key={index} className="text-xl">{emoji}</span>
                 ))}
               </div>
-              <button
-                onClick={() => setShowModal(false)}
-                className="p-1 rounded-lg hover:bg-bg-secondary text-text-secondary"
-              >
+              <button onClick={() => setShowModal(false)} className="p-1 rounded-lg hover:bg-bg-secondary text-text-secondary">
                 <IoClose size={22} />
               </button>
             </div>
@@ -130,25 +123,17 @@ const ReactionSummary = ({ postId = null, reelId = null, commentId = null }) => 
 
             <div className="flex-1 overflow-y-auto p-4">
               {loading ? (
-                <div className="flex justify-center py-8">
-                  <Spinner size="md" />
-                </div>
+                <div className="flex justify-center py-8"><Spinner size="md" /></div>
               ) : filteredReactions.length === 0 ? (
                 <p className="text-center text-text-muted py-8">No reactions</p>
               ) : (
                 <div className="space-y-2">
                   {filteredReactions.map((reaction) => (
                     <div key={reaction.id} className="flex items-center gap-3">
-                      <Avatar
-                        src={reaction.user?.avatarUrl}
-                        name={reaction.user?.fullName}
-                        size="sm"
-                      />
+                      <Avatar src={reaction.user?.avatarUrl} name={reaction.user?.fullName} size="sm" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1">
-                          <span className="font-medium text-text-primary text-sm truncate">
-                            {reaction.user?.fullName}
-                          </span>
+                          <span className="font-medium text-text-primary text-sm truncate">{reaction.user?.fullName}</span>
                           {reaction.user?.hdmVerified && <VerifiedBadge size={12} />}
                         </div>
                       </div>

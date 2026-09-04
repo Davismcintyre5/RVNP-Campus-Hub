@@ -9,6 +9,7 @@ const findById = async (id) => {
           id: true,
           fullName: true,
           avatarUrl: true,
+          hdmVerified: true,
         },
       },
       campus: {
@@ -20,6 +21,7 @@ const findById = async (id) => {
       _count: {
         select: {
           members: true,
+          posts: true,
         },
       },
     },
@@ -46,7 +48,7 @@ const softDelete = async (id) => {
   });
 };
 
-const findAll = async ({ page = 1, limit = 20, campusId = null, search = null }) => {
+const findAll = async ({ page = 1, limit = 20, campusId = null, search = null, category = null }) => {
   const skip = (page - 1) * limit;
 
   const where = {
@@ -54,6 +56,7 @@ const findAll = async ({ page = 1, limit = 20, campusId = null, search = null })
   };
 
   if (campusId) where.campusId = campusId;
+  if (category) where.category = category;
   if (search) {
     where.OR = [
       { name: { contains: search, mode: 'insensitive' } },
@@ -84,6 +87,7 @@ const findAll = async ({ page = 1, limit = 20, campusId = null, search = null })
         _count: {
           select: {
             members: true,
+            posts: true,
           },
         },
       },
@@ -92,6 +96,34 @@ const findAll = async ({ page = 1, limit = 20, campusId = null, search = null })
   ]);
 
   return { groups, total };
+};
+
+const findByUser = async (userId) => {
+  return prisma.group.findMany({
+    where: {
+      members: {
+        some: {
+          userId,
+        },
+      },
+      deletedAt: null,
+    },
+    orderBy: { updatedAt: 'desc' },
+    include: {
+      campus: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      _count: {
+        select: {
+          members: true,
+          posts: true,
+        },
+      },
+    },
+  });
 };
 
 const getMembers = async (groupId, { page = 1, limit = 50 }) => {
@@ -110,6 +142,8 @@ const getMembers = async (groupId, { page = 1, limit = 50 }) => {
             id: true,
             fullName: true,
             avatarUrl: true,
+            hdmVerified: true,
+            course: true,
             campus: {
               select: {
                 id: true,
@@ -126,11 +160,12 @@ const getMembers = async (groupId, { page = 1, limit = 50 }) => {
   return { members, total };
 };
 
-const addMember = async (groupId, userId) => {
+const addMember = async (groupId, userId, role = 'MEMBER') => {
   return prisma.groupMember.create({
     data: {
       groupId,
       userId,
+      role,
     },
   });
 };
@@ -146,16 +181,31 @@ const removeMember = async (groupId, userId) => {
   });
 };
 
-const updateMemberRole = async (groupId, userId, role) => {
-  return prisma.groupMember.update({
+const isMember = async (groupId, userId) => {
+  const member = await prisma.groupMember.findUnique({
     where: {
       groupId_userId: {
         groupId,
         userId,
       },
     },
-    data: { role },
   });
+
+  return !!member;
+};
+
+const getMemberRole = async (groupId, userId) => {
+  const member = await prisma.groupMember.findUnique({
+    where: {
+      groupId_userId: {
+        groupId,
+        userId,
+      },
+    },
+    select: { role: true },
+  });
+
+  return member?.role || null;
 };
 
 const incrementMemberCount = async (id) => {
@@ -172,24 +222,67 @@ const decrementMemberCount = async (id) => {
   });
 };
 
-const findByUser = async (userId) => {
-  return prisma.group.findMany({
-    where: {
-      members: {
-        some: {
-          userId,
-        },
-      },
-      deletedAt: null,
+const createGroupPost = async (groupId, userId, content) => {
+  const post = await prisma.groupPost.create({
+    data: {
+      groupId,
+      userId,
+      content,
     },
     include: {
-      _count: {
+      user: {
         select: {
-          members: true,
+          id: true,
+          fullName: true,
+          avatarUrl: true,
+          hdmVerified: true,
         },
       },
     },
   });
+
+  await prisma.group.update({
+    where: { id: groupId },
+    data: { postCount: { increment: 1 } },
+  });
+
+  return post;
+};
+
+const getGroupPosts = async (groupId, { page = 1, limit = 20 }) => {
+  const skip = (page - 1) * limit;
+
+  const where = {
+    groupId,
+    deletedAt: null,
+  };
+
+  const [posts, total] = await Promise.all([
+    prisma.groupPost.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            avatarUrl: true,
+            hdmVerified: true,
+          },
+        },
+        _count: {
+          select: {
+            comments: true,
+          },
+        },
+      },
+    }),
+    prisma.groupPost.count({ where }),
+  ]);
+
+  return { posts, total };
 };
 
 module.exports = {
@@ -198,11 +291,14 @@ module.exports = {
   update,
   softDelete,
   findAll,
+  findByUser,
   getMembers,
   addMember,
   removeMember,
-  updateMemberRole,
+  isMember,
+  getMemberRole,
   incrementMemberCount,
   decrementMemberCount,
-  findByUser,
+  createGroupPost,
+  getGroupPosts,
 };

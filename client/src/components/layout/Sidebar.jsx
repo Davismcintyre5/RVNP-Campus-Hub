@@ -8,6 +8,7 @@ import {
   IoStorefront,
   IoPerson,
   IoClose,
+  IoHeart,
 } from 'react-icons/io5';
 import Logo from '../ui/Logo.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -79,6 +80,30 @@ const Sidebar = ({ isOpen, onClose }) => {
               )}
             </NavLink>
           ))}
+
+          <NavLink
+            to="/friends"
+            onClick={onClose}
+            className={({ isActive }) => `
+              flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm
+              ${isActive ? 'bg-rvnp-white text-rvnp-green font-medium' : 'text-rvnp-white hover:bg-rvnp-green-dark'}
+            `}
+          >
+            <IoHeart size={18} />
+            <span className="truncate flex-1">Friends</span>
+          </NavLink>
+
+          <NavLink
+            to="/followers"
+            onClick={onClose}
+            className={({ isActive }) => `
+              flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm
+              ${isActive ? 'bg-rvnp-white text-rvnp-green font-medium' : 'text-rvnp-white hover:bg-rvnp-green-dark'}
+            `}
+          >
+            <IoPeople size={18} />
+            <span className="truncate flex-1">Followers</span>
+          </NavLink>
 
           <button
             onClick={() => handleNavigate(`/profile/${user?.id}`)}

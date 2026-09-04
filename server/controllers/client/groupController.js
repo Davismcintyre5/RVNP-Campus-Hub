@@ -3,9 +3,10 @@ const ApiResponse = require('../../utils/ApiResponse.js');
 const ApiError = require('../../utils/ApiError.js');
 const asyncHandler = require('../../utils/asyncHandler.js');
 const notificationService = require('../../services/notificationService.js');
+const prisma = require('../../config/database.js');
 
 const createGroup = asyncHandler(async (req, res) => {
-  const { name, description, campusId, avatarUrl } = req.body;
+  const { name, description, campusId, avatarUrl, coverUrl, category, privacy } = req.body;
   const userId = req.user.id;
 
   if (!name) {
@@ -15,25 +16,29 @@ const createGroup = asyncHandler(async (req, res) => {
   const group = await Group.create({
     name,
     description,
-    campusId,
+    campusId: campusId || req.user.campusId,
     avatarUrl,
+    coverUrl,
+    category: category || 'General',
+    privacy: privacy || 'PUBLIC',
     createdBy: userId,
     memberCount: 1,
   });
 
-  await Group.addMember(group.id, userId);
+  await Group.addMember(group.id, userId, 'ADMIN');
 
   res.status(201).json(ApiResponse.created(group));
 });
 
 const getAllGroups = asyncHandler(async (req, res) => {
-  const { page, limit, campusId, search } = req.query;
+  const { page, limit, campusId, search, category } = req.query;
 
   const data = await Group.findAll({
     page: parseInt(page) || 1,
     limit: parseInt(limit) || 20,
     campusId,
     search,
+    category,
   });
 
   res.json(ApiResponse.ok(data));
@@ -48,12 +53,14 @@ const getGroupById = asyncHandler(async (req, res) => {
     throw ApiError.notFound('Group not found');
   }
 
-  res.json(ApiResponse.ok(group));
+  const isMember = await Group.isMember(id, req.user.id);
+
+  res.json(ApiResponse.ok({ ...group, isMember }));
 });
 
 const updateGroup = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { name, description, avatarUrl } = req.body;
+  const { name, description, avatarUrl, coverUrl, category, privacy } = req.body;
   const userId = req.user.id;
 
   const group = await Group.findById(id);
@@ -62,14 +69,19 @@ const updateGroup = asyncHandler(async (req, res) => {
     throw ApiError.notFound('Group not found');
   }
 
-  if (group.createdBy !== userId) {
-    throw ApiError.forbidden('Only group creator can update group');
+  const role = await Group.getMemberRole(id, userId);
+
+  if (role !== 'ADMIN' && group.createdBy !== userId) {
+    throw ApiError.forbidden('Only admin can update group');
   }
 
   const data = {};
   if (name) data.name = name;
   if (description !== undefined) data.description = description;
   if (avatarUrl) data.avatarUrl = avatarUrl;
+  if (coverUrl) data.coverUrl = coverUrl;
+  if (category) data.category = category;
+  if (privacy) data.privacy = privacy;
 
   const updated = await Group.update(id, data);
 
@@ -87,7 +99,7 @@ const deleteGroup = asyncHandler(async (req, res) => {
   }
 
   if (group.createdBy !== userId && req.user.role !== 'ADMIN' && req.user.role !== 'SUPER_ADMIN') {
-    throw ApiError.forbidden('Only group creator can delete group');
+    throw ApiError.forbidden('Only creator can delete group');
   }
 
   await Group.softDelete(id);
@@ -117,14 +129,13 @@ const joinGroup = asyncHandler(async (req, res) => {
     throw ApiError.notFound('Group not found');
   }
 
-  const members = await Group.getMembers(id, { page: 1, limit: 1000 });
-  const isMember = members.members.some((m) => m.userId === userId);
+  const alreadyMember = await Group.isMember(id, userId);
 
-  if (isMember) {
+  if (alreadyMember) {
     throw ApiError.conflict('Already a member of this group');
   }
 
-  await Group.addMember(id, userId);
+  await Group.addMember(id, userId, 'MEMBER');
   await Group.incrementMemberCount(id);
 
   res.json(ApiResponse.ok(null, 'Joined group successfully'));
@@ -140,11 +151,14 @@ const leaveGroup = asyncHandler(async (req, res) => {
     throw ApiError.notFound('Group not found');
   }
 
-  const members = await Group.getMembers(id, { page: 1, limit: 1000 });
-  const isMember = members.members.some((m) => m.userId === userId);
+  const alreadyMember = await Group.isMember(id, userId);
 
-  if (!isMember) {
+  if (!alreadyMember) {
     throw ApiError.badRequest('Not a member of this group');
+  }
+
+  if (group.createdBy === userId) {
+    throw ApiError.badRequest('Creator cannot leave group. Delete it instead');
   }
 
   await Group.removeMember(id, userId);
@@ -184,6 +198,44 @@ const getMyGroups = asyncHandler(async (req, res) => {
   res.json(ApiResponse.ok(groups));
 });
 
+const createGroupPost = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { content } = req.body;
+  const userId = req.user.id;
+
+  if (!content) {
+    throw ApiError.badRequest('Content is required');
+  }
+
+  const isMember = await Group.isMember(id, userId);
+
+  if (!isMember) {
+    throw ApiError.forbidden('Only members can post in group');
+  }
+
+  const post = await Group.createGroupPost(id, userId, content);
+
+  res.status(201).json(ApiResponse.created(post));
+});
+
+const getGroupPosts = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { page, limit } = req.query;
+
+  const isMember = await Group.isMember(id, req.user.id);
+
+  if (!isMember && req.user.role !== 'ADMIN') {
+    throw ApiError.forbidden('Only members can view group posts');
+  }
+
+  const data = await Group.getGroupPosts(id, {
+    page: parseInt(page) || 1,
+    limit: parseInt(limit) || 20,
+  });
+
+  res.json(ApiResponse.ok(data));
+});
+
 module.exports = {
   createGroup,
   getAllGroups,
@@ -195,4 +247,6 @@ module.exports = {
   leaveGroup,
   inviteToGroup,
   getMyGroups,
+  createGroupPost,
+  getGroupPosts,
 };

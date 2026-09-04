@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { IoHeart } from 'react-icons/io5';
 
 const REACTIONS = [
   { type: 'LIKE', emoji: '👍', label: 'Like' },
@@ -37,25 +38,26 @@ const ReactionPicker = ({ onSelect, onRemove, currentReaction, size = 'md' }) =>
       <button
         type="button"
         onClick={() => setShowPicker(!showPicker)}
-        className={`${sizes[size]} transition-transform hover:scale-110`}
+        className={`
+          ${sizes[size]}
+          transition-transform hover:scale-110
+          ${currentReaction ? '' : 'text-rvnp-green'}
+        `}
       >
-        {currentReaction ? getEmoji(currentReaction) : '👍'}
+        {currentReaction ? getEmoji(currentReaction) : <IoHeart size={size === 'sm' ? 18 : size === 'md' ? 24 : 30} className="text-rvnp-green" />}
       </button>
 
       {showPicker && (
         <>
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setShowPicker(false)}
-          />
-          <div className="absolute bottom-full left-0 mb-2 z-20 flex gap-1 p-2 rounded-full bg-bg-primary border border-border-color shadow-lg">
+          <div className="fixed inset-0 z-10" onClick={() => setShowPicker(false)} />
+          <div className="absolute bottom-full left-0 mb-2 z-20 flex gap-1 p-2 rounded-full bg-bg-primary border-2 border-rvnp-green shadow-lg">
             {REACTIONS.map((reaction) => (
               <button
                 key={reaction.type}
                 type="button"
                 onClick={() => handleSelect(reaction.type)}
                 className={`text-2xl transition-transform hover:scale-125 ${
-                  currentReaction === reaction.type ? 'scale-125' : ''
+                  currentReaction === reaction.type ? 'scale-125 ring-2 ring-rvnp-green rounded-full' : ''
                 }`}
                 title={reaction.label}
               >

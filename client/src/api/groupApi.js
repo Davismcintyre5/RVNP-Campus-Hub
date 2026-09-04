@@ -4,9 +4,9 @@ const createGroup = (data) => {
   return axiosInstance.post('/groups', data);
 };
 
-const getAllGroups = (page = 1, limit = 20, campusId = null, search = null) => {
+const getAllGroups = (page = 1, limit = 20, campusId = null, search = null, category = null) => {
   return axiosInstance.get('/groups', {
-    params: { page, limit, campusId, search },
+    params: { page, limit, campusId, search, category },
   });
 };
 
@@ -44,6 +44,16 @@ const getMyGroups = () => {
   return axiosInstance.get('/groups/my-groups');
 };
 
+const createGroupPost = (groupId, content) => {
+  return axiosInstance.post(`/groups/${groupId}/posts`, { content });
+};
+
+const getGroupPosts = (groupId, page = 1, limit = 20) => {
+  return axiosInstance.get(`/groups/${groupId}/posts`, {
+    params: { page, limit },
+  });
+};
+
 export default {
   createGroup,
   getAllGroups,
@@ -55,4 +65,6 @@ export default {
   leaveGroup,
   inviteToGroup,
   getMyGroups,
+  createGroupPost,
+  getGroupPosts,
 };

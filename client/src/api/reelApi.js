@@ -28,12 +28,26 @@ const getMyReels = (page = 1, limit = 10) => {
   });
 };
 
-const likeReel = (id) => {
-  return axiosInstance.post(`/reels/${id}/like`);
+const getUserReels = (userId, page = 1, limit = 10) => {
+  return axiosInstance.get(`/reels/user/${userId}`, {
+    params: { page, limit },
+  });
 };
 
-const unlikeReel = (id) => {
-  return axiosInstance.delete(`/reels/${id}/like`);
+const reactToReel = (id, type) => {
+  return axiosInstance.post(`/reels/${id}/react`, { type });
+};
+
+const removeReaction = (id) => {
+  return axiosInstance.delete(`/reels/${id}/react`);
+};
+
+const incrementView = (id) => {
+  return axiosInstance.post(`/reels/${id}/view`);
+};
+
+const shareReel = (id) => {
+  return axiosInstance.post(`/reels/${id}/share`);
 };
 
 export default {
@@ -43,6 +57,9 @@ export default {
   updateReel,
   deleteReel,
   getMyReels,
-  likeReel,
-  unlikeReel,
+  getUserReels,
+  reactToReel,
+  removeReaction,
+  incrementView,
+  shareReel,
 };

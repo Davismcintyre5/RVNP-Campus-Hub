@@ -3,6 +3,7 @@ import Layout from '../components/layout/Layout.jsx';
 import StoriesBar from '../components/stories/StoriesBar.jsx';
 import PostComposer from '../components/posts/PostComposer.jsx';
 import PostCard from '../components/posts/PostCard.jsx';
+import ReelsRow from '../components/reels/ReelsRow.jsx';
 import Spinner from '../components/ui/Spinner.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import Tabs from '../components/ui/Tabs.jsx';
@@ -11,6 +12,7 @@ import postApi from '../api/postApi.js';
 
 const Feed = () => {
   const [posts, setPosts] = useState([]);
+  const [reels, setReels] = useState([]);
   const [activeTab, setActiveTab] = useState('all');
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -24,7 +26,20 @@ const Feed = () => {
 
   useEffect(() => {
     fetchFeed(1, true);
+    fetchReels();
   }, [activeTab]);
+
+  const fetchReels = async () => {
+    try {
+      const response = await feedApi.getFeedReels(8);
+
+      if (response.data.success) {
+        setReels(response.data.data.reels || []);
+      }
+    } catch (error) {
+      console.error('Failed to load reels:', error.message);
+    }
+  };
 
   const fetchFeed = async (pageNum = 1, reset = false) => {
     if (reset) {
@@ -73,30 +88,6 @@ const Feed = () => {
     setPosts((prev) => [newPost, ...prev]);
   };
 
-  const handleLike = async (postId) => {
-    try {
-      await postApi.likePost(postId);
-    } catch (error) {
-      console.error('Like failed:', error.message);
-    }
-  };
-
-  const handleUnlike = async (postId) => {
-    try {
-      await postApi.unlikePost(postId);
-    } catch (error) {
-      console.error('Unlike failed:', error.message);
-    }
-  };
-
-  const handleShare = async (postId) => {
-    try {
-      await postApi.sharePost(postId);
-    } catch (error) {
-      console.error('Share failed:', error.message);
-    }
-  };
-
   return (
     <Layout>
       <div className="space-y-4 w-full">
@@ -105,6 +96,11 @@ const Feed = () => {
         <PostComposer onPostCreated={handlePostCreated} />
 
         <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+
+        {/* Reels Row - Below tabs, only on "All Posts" */}
+        {activeTab === 'all' && reels.length > 0 && (
+          <ReelsRow reels={reels} />
+        )}
 
         {loading ? (
           <div className="flex justify-center py-20">
@@ -118,13 +114,7 @@ const Feed = () => {
         ) : (
           <div className="space-y-4 w-full">
             {posts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                onLike={handleLike}
-                onUnlike={handleUnlike}
-                onShare={handleShare}
-              />
+              <PostCard key={post.id} post={post} />
             ))}
 
             {loadingMore && (

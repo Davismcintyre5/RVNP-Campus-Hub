@@ -9,6 +9,7 @@ const findById = async (id) => {
           id: true,
           fullName: true,
           avatarUrl: true,
+          hdmVerified: true,
           campus: {
             select: {
               id: true,
@@ -21,6 +22,31 @@ const findById = async (id) => {
         select: {
           id: true,
           name: true,
+        },
+      },
+      comments: {
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              avatarUrl: true,
+              hdmVerified: true,
+            },
+          },
+        },
+      },
+      reactions: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              avatarUrl: true,
+            },
+          },
         },
       },
       _count: {
@@ -42,6 +68,7 @@ const create = async (data) => {
           id: true,
           fullName: true,
           avatarUrl: true,
+          hdmVerified: true,
         },
       },
     },
@@ -62,16 +89,15 @@ const softDelete = async (id) => {
   });
 };
 
-const getFeed = async ({ page = 1, limit = 10, campusId = null }) => {
+const getFeed = async ({ page = 1, limit = 10, campusId = null, userId = null }) => {
   const skip = (page - 1) * limit;
 
   const where = {
     deletedAt: null,
   };
 
-  if (campusId) {
-    where.campusId = campusId;
-  }
+  if (campusId) where.campusId = campusId;
+  if (userId) where.userId = userId;
 
   const [reels, total] = await Promise.all([
     prisma.reel.findMany({
@@ -85,12 +111,19 @@ const getFeed = async ({ page = 1, limit = 10, campusId = null }) => {
             id: true,
             fullName: true,
             avatarUrl: true,
+            hdmVerified: true,
             campus: {
               select: {
                 id: true,
                 name: true,
               },
             },
+          },
+        },
+        campus: {
+          select: {
+            id: true,
+            name: true,
           },
         },
         _count: {
@@ -171,6 +204,13 @@ const decrementComment = async (id) => {
   });
 };
 
+const incrementShare = async (id) => {
+  return prisma.reel.update({
+    where: { id },
+    data: { shareCount: { increment: 1 } },
+  });
+};
+
 module.exports = {
   findById,
   create,
@@ -183,4 +223,5 @@ module.exports = {
   decrementLike,
   incrementComment,
   decrementComment,
+  incrementShare,
 };

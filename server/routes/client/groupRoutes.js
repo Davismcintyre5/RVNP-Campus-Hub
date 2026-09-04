@@ -15,5 +15,7 @@ router.get('/:id/members', groupController.getGroupMembers);
 router.post('/:id/join', groupController.joinGroup);
 router.delete('/:id/leave', groupController.leaveGroup);
 router.post('/:id/invite', groupController.inviteToGroup);
+router.post('/:id/posts', groupController.createGroupPost);
+router.get('/:id/posts', groupController.getGroupPosts);
 
 module.exports = router;
