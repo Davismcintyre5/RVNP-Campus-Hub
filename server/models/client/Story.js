@@ -97,6 +97,30 @@ const getActiveStories = async ({ campusId = null, userId = null }) => {
   return Object.values(grouped);
 };
 
+const getExpiredStories = async () => {
+  const now = new Date();
+
+  return prisma.story.findMany({
+    where: {
+      expiresAt: {
+        lt: now,
+      },
+    },
+  });
+};
+
+const deleteExpired = async () => {
+  const now = new Date();
+
+  return prisma.story.deleteMany({
+    where: {
+      expiresAt: {
+        lt: now,
+      },
+    },
+  });
+};
+
 const addView = async (storyId, userId) => {
   return prisma.storyView.upsert({
     where: {
@@ -174,14 +198,24 @@ const getReactions = async (storyId) => {
   });
 };
 
+const incrementView = async (id) => {
+  return prisma.story.update({
+    where: { id },
+    data: { viewCount: { increment: 1 } },
+  });
+};
+
 module.exports = {
   findById,
   create,
   softDelete,
   getActiveStories,
+  getExpiredStories,
+  deleteExpired,
   addView,
   getViewers,
   addReaction,
   removeReaction,
   getReactions,
+  incrementView,
 };

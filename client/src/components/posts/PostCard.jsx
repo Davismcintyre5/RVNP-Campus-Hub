@@ -1,6 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IoChatbubbleOutline, IoShareOutline, IoEllipsisHorizontal, IoLocation } from 'react-icons/io5';
+import {
+  IoChatbubbleOutline,
+  IoShareOutline,
+  IoEllipsisHorizontal,
+  IoLocation,
+  IoClose,
+} from 'react-icons/io5';
 import Avatar from '../ui/Avatar.jsx';
 import VerifiedBadge from '../ui/VerifiedBadge.jsx';
 import ReactionPicker from '../reactions/ReactionPicker.jsx';
@@ -26,6 +32,10 @@ const PostCard = ({ post, onReaction, onShare }) => {
   const [commentCount, setCommentCount] = useState(post?.commentCount || 0);
   const [shareCount, setShareCount] = useState(post?.shareCount || 0);
   const [showMenu, setShowMenu] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const scrollContainerRef = useRef(null);
 
   useEffect(() => {
     fetchMyReaction();
@@ -63,11 +73,35 @@ const PostCard = ({ post, onReaction, onShare }) => {
     await postApi.removeReaction(post.id);
   };
 
+  const openLightbox = (index) => {
+    setCurrentImageIndex(index);
+    setLightboxOpen(true);
+  };
+
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+    setCurrentImageIndex(0);
+  };
+
+  const handleScroll = () => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const scrollTop = container.scrollTop;
+    const itemHeight = container.clientHeight;
+    const newIndex = Math.round(scrollTop / itemHeight);
+
+    if (newIndex !== currentImageIndex && newIndex >= 0) {
+      setCurrentImageIndex(newIndex);
+    }
+  };
+
   const content = post?.content;
 
   return (
     <>
       <div className="bg-bg-primary border border-border-color rounded-xl p-3 sm:p-4 w-full">
+        {/* Header */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div className="shrink-0">
@@ -106,21 +140,7 @@ const PostCard = ({ post, onReaction, onShare }) => {
           </div>
         </div>
 
-        {post?.sharedFrom && (
-          <div className="mt-2 p-3 rounded-lg bg-bg-secondary border border-border-color">
-            <div className="flex items-center gap-2">
-              <Avatar src={post.sharedFrom.user?.avatarUrl} name={post.sharedFrom.user?.fullName} size="sm" />
-              <span className="text-sm font-medium text-text-primary">{post.sharedFrom.user?.fullName}</span>
-            </div>
-            {post.sharedFrom.content?.text && (
-              <p className="text-text-secondary text-sm mt-1 line-clamp-2">{post.sharedFrom.content.text}</p>
-            )}
-            {post.sharedFrom.content?.images && post.sharedFrom.content.images.length > 0 && (
-              <img src={post.sharedFrom.content.images[0]} alt="Shared" className="w-full rounded-lg mt-2 max-h-48 object-cover" />
-            )}
-          </div>
-        )}
-
+        {/* Content */}
         {content?.text && (
           <p className="text-text-primary mt-3 whitespace-pre-wrap text-sm sm:text-base break-words">{content.text}</p>
         )}
@@ -149,10 +169,17 @@ const PostCard = ({ post, onReaction, onShare }) => {
           </div>
         )}
 
+        {/* Images Grid */}
         {content?.images && content.images.length > 0 && (
           <div className={`mt-3 grid gap-2 ${content.images.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {content.images.map((image, index) => (
-              <img key={index} src={image} alt={`Post ${index + 1}`} className="w-full rounded-lg object-cover max-h-64 sm:max-h-96" />
+              <img
+                key={index}
+                src={image}
+                alt={`Post ${index + 1}`}
+                className="w-full rounded-lg object-cover max-h-64 sm:max-h-96 cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => openLightbox(index)}
+              />
             ))}
           </div>
         )}
@@ -167,6 +194,7 @@ const PostCard = ({ post, onReaction, onShare }) => {
           </div>
         )}
 
+        {/* Actions */}
         <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border-color">
           <div className="flex items-center gap-1">
             <ReactionPicker currentReaction={currentReaction} onSelect={handleReaction} onRemove={handleRemoveReaction} />
@@ -187,10 +215,67 @@ const PostCard = ({ post, onReaction, onShare }) => {
         </div>
       </div>
 
+      {/* Image Lightbox - Vertical Scroll */}
+      {lightboxOpen && content?.images && content.images.length > 0 && (
+        <div className="fixed inset-0 z-[60] bg-black bg-opacity-95 flex flex-col">
+          {/* Top bar */}
+          <div className="flex items-center justify-between p-4 shrink-0">
+            <span className="text-white text-sm">
+              {currentImageIndex + 1} / {content.images.length}
+            </span>
+            <button onClick={closeLightbox} className="p-2 rounded-full bg-black bg-opacity-50 text-white">
+              <IoClose size={28} />
+            </button>
+          </div>
+
+          {/* Vertically scrollable images */}
+          <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto snap-y snap-mandatory scrollbar-hide"
+          >
+            {content.images.map((image, index) => (
+              <div key={index} className="min-h-full flex items-center justify-center snap-center">
+                <img
+                  src={image}
+                  alt={`Image ${index + 1}`}
+                  className="max-w-full w-full h-auto object-contain"
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Dots indicator */}
+          {content.images.length > 1 && (
+            <div className="flex justify-center gap-1.5 p-4 shrink-0">
+              {content.images.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    const container = scrollContainerRef.current;
+                    if (container) {
+                      container.scrollTo({
+                        top: index * container.clientHeight,
+                        behavior: 'smooth',
+                      });
+                    }
+                  }}
+                  className={`h-1.5 rounded-full transition-all ${
+                    index === currentImageIndex ? 'w-6 bg-white' : 'w-1.5 bg-white bg-opacity-40'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Comments Modal */}
       <Modal isOpen={showComments} onClose={() => setShowComments(false)} title="Comments" size="md">
         <CommentList postId={post.id} onCommentCountChange={setCommentCount} />
       </Modal>
 
+      {/* Share Modal */}
       <ShareModal isOpen={showShare} onClose={() => setShowShare(false)} post={post} onShared={() => setShareCount((prev) => prev + 1)} />
     </>
   );

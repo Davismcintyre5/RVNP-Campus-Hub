@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IoHeart, IoHeartOutline, IoTrash, IoPencil } from 'react-icons/io5';
+import { IoHeart, IoHeartOutline, IoTrash, IoPencil, IoSend } from 'react-icons/io5';
 import Avatar from '../ui/Avatar.jsx';
 import VerifiedBadge from '../ui/VerifiedBadge.jsx';
 import Spinner from '../ui/Spinner.jsx';
@@ -10,7 +10,7 @@ import commentApi from '../../api/commentApi.js';
 import { formatCount } from '../../utils/formatNumber.js';
 import timeAgo from '../../utils/timeAgo.js';
 
-const CommentList = ({ postId = null, reelId = null, onCommentCountChange }) => {
+const CommentList = ({ postId = null, reelId = null, groupPostId = null, onCommentCountChange }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -24,7 +24,7 @@ const CommentList = ({ postId = null, reelId = null, onCommentCountChange }) => 
 
   useEffect(() => {
     fetchComments();
-  }, [postId, reelId]);
+  }, [postId, reelId, groupPostId]);
 
   const fetchComments = async () => {
     setLoading(true);
@@ -133,6 +133,7 @@ const CommentList = ({ postId = null, reelId = null, onCommentCountChange }) => 
 
   return (
     <div className="space-y-4">
+      {/* Add Comment */}
       <div className="flex gap-2">
         <Avatar src={user?.avatarUrl} name={user?.fullName} size="sm" />
         <div className="flex-1 flex gap-2">
@@ -142,18 +143,19 @@ const CommentList = ({ postId = null, reelId = null, onCommentCountChange }) => 
             onChange={(e) => setNewComment(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
             placeholder="Write a comment..."
-            className="flex-1 px-3 py-2 rounded-lg bg-bg-secondary text-text-primary text-sm border border-border-color focus:outline-none placeholder:text-text-muted"
+            className="flex-1 px-3 py-2 rounded-lg bg-bg-secondary text-text-primary text-sm border border-border-color focus:outline-none focus:border-rvnp-green placeholder:text-text-muted"
           />
           <button
             onClick={handleAddComment}
             disabled={!newComment.trim() || sending}
-            className="px-3 py-2 rounded-lg bg-rvnp-green text-rvnp-white text-sm font-medium disabled:opacity-50"
+            className="p-2 rounded-full bg-rvnp-green text-rvnp-white disabled:opacity-50 shrink-0"
           >
-            Post
+            <IoSend size={16} />
           </button>
         </div>
       </div>
 
+      {/* Comments List */}
       {comments.length === 0 ? (
         <EmptyState title="No comments yet" description="Be the first to comment!" />
       ) : (
@@ -195,10 +197,16 @@ const CommentList = ({ postId = null, reelId = null, onCommentCountChange }) => 
                     <button
                       onClick={() => handleLikeComment(comment.id)}
                       className={`flex items-center gap-0.5 text-xs ${
-                        likedComments[comment.id] ? 'text-rvnp-red' : 'text-text-muted hover:text-text-primary'
+                        likedComments[comment.id]
+                          ? 'text-rvnp-green'
+                          : 'text-text-muted hover:text-rvnp-green'
                       }`}
                     >
-                      {likedComments[comment.id] ? <IoHeart size={12} /> : <IoHeartOutline size={12} />}
+                      {likedComments[comment.id] ? (
+                        <IoHeart size={12} className="text-rvnp-green" />
+                      ) : (
+                        <IoHeartOutline size={12} className="text-rvnp-green" />
+                      )}
                       {formatCount(comment.likeCount)}
                     </button>
                     {comment.user?.id === user?.id && (
@@ -211,6 +219,7 @@ const CommentList = ({ postId = null, reelId = null, onCommentCountChange }) => 
                     )}
                   </div>
 
+                  {/* Reply Input */}
                   {replyTo === comment.id && (
                     <div className="flex gap-2 mt-2 ml-4">
                       <input
@@ -223,22 +232,26 @@ const CommentList = ({ postId = null, reelId = null, onCommentCountChange }) => 
                       />
                       <button
                         onClick={() => handleAddReply(comment.id)}
-                        className="px-2 py-1.5 rounded-lg bg-rvnp-green text-rvnp-white text-xs"
+                        className="p-1.5 rounded-full bg-rvnp-green text-rvnp-white"
                       >
-                        Reply
+                        <IoSend size={12} />
                       </button>
                     </div>
                   )}
 
+                  {/* Replies */}
                   {comment.replies && comment.replies.length > 0 && (
                     <div className="ml-8 mt-2 space-y-2">
                       {comment.replies.map((reply) => (
                         <div key={reply.id} className="flex gap-2">
                           <Avatar src={reply.user?.avatarUrl} name={reply.user?.fullName} size="sm" />
                           <div className="flex-1 bg-bg-secondary rounded-xl px-3 py-2">
-                            <span className="font-medium text-text-primary text-xs">
-                              {reply.user?.fullName}
-                            </span>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-text-primary text-xs">
+                                {reply.user?.fullName}
+                              </span>
+                              {reply.user?.hdmVerified && <VerifiedBadge size={10} />}
+                            </div>
                             <p className="text-text-primary text-xs mt-0.5">{reply.content}</p>
                           </div>
                         </div>

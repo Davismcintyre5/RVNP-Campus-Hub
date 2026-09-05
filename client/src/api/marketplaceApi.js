@@ -4,10 +4,8 @@ const createListing = (data) => {
   return axiosInstance.post('/marketplace', data);
 };
 
-const getAllListings = (page = 1, limit = 20, campusId = null, category = null, search = null) => {
-  return axiosInstance.get('/marketplace', {
-    params: { page, limit, campusId, category, search },
-  });
+const getAllListings = (params = {}) => {
+  return axiosInstance.get('/marketplace', { params });
 };
 
 const getListingById = (id) => {
@@ -26,14 +24,26 @@ const markAsSold = (id) => {
   return axiosInstance.put(`/marketplace/${id}/sold`);
 };
 
-const getMyListings = (page = 1, limit = 20) => {
+const markAsActive = (id) => {
+  return axiosInstance.put(`/marketplace/${id}/active`);
+};
+
+const getMyListings = (page = 1, limit = 20, status = null) => {
   return axiosInstance.get('/marketplace/my-listings', {
-    params: { page, limit },
+    params: { page, limit, status },
   });
 };
 
 const getCategories = () => {
   return axiosInstance.get('/marketplace/categories');
+};
+
+const addOffer = (id, amount, message = null) => {
+  return axiosInstance.post(`/marketplace/${id}/offers`, { amount, message });
+};
+
+const getOffers = (id) => {
+  return axiosInstance.get(`/marketplace/${id}/offers`);
 };
 
 export default {
@@ -43,6 +53,9 @@ export default {
   updateListing,
   deleteListing,
   markAsSold,
+  markAsActive,
   getMyListings,
   getCategories,
+  addOffer,
+  getOffers,
 };

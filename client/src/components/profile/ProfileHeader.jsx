@@ -6,6 +6,7 @@ import {
   IoPersonRemove,
   IoSettings,
   IoCamera,
+  IoClose,
 } from 'react-icons/io5';
 import CoverPhoto from '../ui/CoverPhoto.jsx';
 import Avatar from '../ui/Avatar.jsx';
@@ -28,12 +29,21 @@ const ProfileHeader = ({ user, isFollowing, onFollow, onUnfollow, onMessage, onC
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [loadingList, setLoadingList] = useState(false);
+  const [imageViewer, setImageViewer] = useState(null);
 
   const isOwnProfile = currentUser?.id === user?.id;
 
   const handleAvatarClick = () => {
-    if (isOwnProfile) {
+    if (user?.avatarUrl) {
+      setImageViewer({ type: 'avatar', url: user.avatarUrl });
+    } else if (isOwnProfile) {
       document.getElementById('avatar-input').click();
+    }
+  };
+
+  const handleCoverClick = () => {
+    if (user?.coverUrl) {
+      setImageViewer({ type: 'cover', url: user.coverUrl });
     }
   };
 
@@ -43,7 +53,6 @@ const ProfileHeader = ({ user, isFollowing, onFollow, onUnfollow, onMessage, onC
 
     try {
       const response = await userApi.getFollowers(user.id);
-
       if (response.data.success) {
         setFollowers(response.data.data.followers || []);
       }
@@ -60,7 +69,6 @@ const ProfileHeader = ({ user, isFollowing, onFollow, onUnfollow, onMessage, onC
 
     try {
       const response = await userApi.getFollowing(user.id);
-
       if (response.data.success) {
         setFollowing(response.data.data.following || []);
       }
@@ -73,26 +81,31 @@ const ProfileHeader = ({ user, isFollowing, onFollow, onUnfollow, onMessage, onC
 
   return (
     <div>
-      <CoverPhoto
-        src={user?.coverUrl}
-        editable={isOwnProfile}
-        onImageSelect={onCoverChange}
-      />
+      {/* Cover Photo - Clickable */}
+      <div onClick={handleCoverClick} className="cursor-pointer">
+        <CoverPhoto
+          src={user?.coverUrl}
+          editable={isOwnProfile}
+          onImageSelect={onCoverChange}
+        />
+      </div>
 
       <div className="px-4 pb-4">
         <div className="flex items-end justify-between -mt-14 px-4 relative z-10">
           <div className="relative inline-block">
-            <Avatar
-              src={user?.avatarUrl}
-              name={user?.fullName}
-              size="xl"
-              onClick={handleAvatarClick}
-            />
+            {/* Avatar - Clickable */}
+            <div onClick={handleAvatarClick} className="cursor-pointer">
+              <Avatar
+                src={user?.avatarUrl}
+                name={user?.fullName}
+                size="xl"
+              />
+            </div>
 
             {isOwnProfile && (
               <>
                 <button
-                  onClick={handleAvatarClick}
+                  onClick={() => document.getElementById('avatar-input').click()}
                   className="absolute bottom-0 right-0 z-20 p-1.5 rounded-full bg-bg-primary border border-border-color text-text-secondary hover:text-text-primary shadow-lg cursor-pointer"
                 >
                   <IoCamera size={14} />
@@ -154,25 +167,18 @@ const ProfileHeader = ({ user, isFollowing, onFollow, onUnfollow, onMessage, onC
           )}
 
           {user?.campus && (
-            <p className="text-text-secondary text-sm mt-0.5">
-              📍 {user.campus.name}
-            </p>
+            <p className="text-text-secondary text-sm mt-0.5">📍 {user.campus.name}</p>
           )}
 
           {user?.department && (
-            <p className="text-text-secondary text-sm">
-              🏛️ {user.department.name}
-            </p>
+            <p className="text-text-secondary text-sm">🏛️ {user.department.name}</p>
           )}
 
           {user?.bio && (
             <p className="text-text-primary mt-2">
               {showFullBio ? user.bio : `${user.bio.slice(0, 100)}${user.bio.length > 100 ? '...' : ''}`}
               {user.bio.length > 100 && (
-                <button
-                  onClick={() => setShowFullBio(!showFullBio)}
-                  className="text-text-muted hover:text-text-primary ml-1 text-sm"
-                >
+                <button onClick={() => setShowFullBio(!showFullBio)} className="text-text-muted hover:text-text-primary ml-1 text-sm">
                   {showFullBio ? 'Show less' : 'Show more'}
                 </button>
               )}
@@ -184,39 +190,38 @@ const ProfileHeader = ({ user, isFollowing, onFollow, onUnfollow, onMessage, onC
           </p>
 
           <div className="flex gap-2 mt-4 border-t border-border-color pt-3 flex-wrap">
-            <StatCard
-              label="Posts"
-              value={user?._count?.posts || 0}
-            />
-            <StatCard
-              label="Reels"
-              value={user?._count?.reels || 0}
-            />
-            <StatCard
-              label="Friends"
-              value={user?._count?.friends || 0}
-              onClick={() => navigate('/friends')}
-            />
-            <StatCard
-              label="Followers"
-              value={user?._count?.followers || 0}
-              onClick={fetchFollowers}
-            />
-            <StatCard
-              label="Following"
-              value={user?._count?.following || 0}
-              onClick={fetchFollowing}
-            />
+            <StatCard label="Posts" value={user?._count?.posts || 0} />
+            <StatCard label="Reels" value={user?._count?.reels || 0} />
+            <StatCard label="Friends" value={user?._count?.friends || 0} onClick={() => navigate('/friends')} />
+            <StatCard label="Followers" value={user?._count?.followers || 0} onClick={fetchFollowers} />
+            <StatCard label="Following" value={user?._count?.following || 0} onClick={fetchFollowing} />
           </div>
         </div>
       </div>
 
+      {/* Image Viewer Modal */}
+      {imageViewer && (
+        <div className="fixed inset-0 z-[70] bg-black bg-opacity-95 flex items-center justify-center" onClick={() => setImageViewer(null)}>
+          <button
+            onClick={() => setImageViewer(null)}
+            className="absolute top-4 right-4 z-20 p-2 rounded-full bg-black bg-opacity-50 text-white"
+          >
+            <IoClose size={28} />
+          </button>
+
+          <img
+            src={imageViewer.url}
+            alt={imageViewer.type === 'avatar' ? 'Profile Photo' : 'Cover Photo'}
+            className="max-w-full max-h-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       {/* Followers Modal */}
       <Modal isOpen={showFollowers} onClose={() => setShowFollowers(false)} title="Followers" size="sm">
         {loadingList ? (
-          <div className="flex justify-center py-8">
-            <Spinner size="md" />
-          </div>
+          <div className="flex justify-center py-8"><Spinner size="md" /></div>
         ) : followers.length === 0 ? (
           <p className="text-center text-text-muted py-8">No followers yet</p>
         ) : (
@@ -224,23 +229,15 @@ const ProfileHeader = ({ user, isFollowing, onFollow, onUnfollow, onMessage, onC
             {followers.map((follow) => (
               <button
                 key={follow.id}
-                onClick={() => {
-                  setShowFollowers(false);
-                  navigate(`/profile/${follow.follower?.id}`);
-                }}
+                onClick={() => { setShowFollowers(false); navigate(`/profile/${follow.follower?.id}`); }}
                 className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-bg-secondary transition-all text-left"
               >
                 <Avatar src={follow.follower?.avatarUrl} name={follow.follower?.fullName} size="sm" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1">
-                    <span className="font-medium text-text-primary text-sm truncate">
-                      {follow.follower?.fullName}
-                    </span>
+                    <span className="font-medium text-text-primary text-sm truncate">{follow.follower?.fullName}</span>
                     {follow.follower?.hdmVerified && <VerifiedBadge size={12} />}
                   </div>
-                  {follow.follower?.course && (
-                    <span className="text-xs text-text-muted">{follow.follower.course}</span>
-                  )}
                 </div>
               </button>
             ))}
@@ -251,9 +248,7 @@ const ProfileHeader = ({ user, isFollowing, onFollow, onUnfollow, onMessage, onC
       {/* Following Modal */}
       <Modal isOpen={showFollowing} onClose={() => setShowFollowing(false)} title="Following" size="sm">
         {loadingList ? (
-          <div className="flex justify-center py-8">
-            <Spinner size="md" />
-          </div>
+          <div className="flex justify-center py-8"><Spinner size="md" /></div>
         ) : following.length === 0 ? (
           <p className="text-center text-text-muted py-8">Not following anyone yet</p>
         ) : (
@@ -261,23 +256,15 @@ const ProfileHeader = ({ user, isFollowing, onFollow, onUnfollow, onMessage, onC
             {following.map((follow) => (
               <button
                 key={follow.id}
-                onClick={() => {
-                  setShowFollowing(false);
-                  navigate(`/profile/${follow.following?.id}`);
-                }}
+                onClick={() => { setShowFollowing(false); navigate(`/profile/${follow.following?.id}`); }}
                 className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-bg-secondary transition-all text-left"
               >
                 <Avatar src={follow.following?.avatarUrl} name={follow.following?.fullName} size="sm" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1">
-                    <span className="font-medium text-text-primary text-sm truncate">
-                      {follow.following?.fullName}
-                    </span>
+                    <span className="font-medium text-text-primary text-sm truncate">{follow.following?.fullName}</span>
                     {follow.following?.hdmVerified && <VerifiedBadge size={12} />}
                   </div>
-                  {follow.following?.course && (
-                    <span className="text-xs text-text-muted">{follow.following.course}</span>
-                  )}
                 </div>
               </button>
             ))}

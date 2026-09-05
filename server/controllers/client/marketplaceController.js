@@ -12,21 +12,25 @@ const createListing = asyncHandler(async (req, res) => {
     throw ApiError.badRequest('Title, price, and category are required');
   }
 
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 30);
+
   const listing = await Marketplace.create({
     title,
     description,
     price: parseFloat(price),
     category,
-    images,
+    images: images || [],
     userId,
     campusId: campusId || req.user.campusId,
+    expiresAt,
   });
 
   res.status(201).json(ApiResponse.created(listing));
 });
 
 const getAllListings = asyncHandler(async (req, res) => {
-  const { page, limit, campusId, category, search } = req.query;
+  const { page, limit, campusId, category, search, minPrice, maxPrice, status } = req.query;
 
   const data = await Marketplace.findAll({
     page: parseInt(page) || 1,
@@ -34,6 +38,9 @@ const getAllListings = asyncHandler(async (req, res) => {
     campusId,
     category,
     search,
+    minPrice: minPrice ? parseFloat(minPrice) : null,
+    maxPrice: maxPrice ? parseFloat(maxPrice) : null,
+    status: status || 'ACTIVE',
   });
 
   res.json(ApiResponse.ok(data));
@@ -116,12 +123,32 @@ const markAsSold = asyncHandler(async (req, res) => {
   res.json(ApiResponse.ok(null, 'Listing marked as sold'));
 });
 
+const markAsActive = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  const listing = await Marketplace.findById(id);
+
+  if (!listing) {
+    throw ApiError.notFound('Listing not found');
+  }
+
+  if (listing.userId !== userId) {
+    throw ApiError.forbidden('You can only update your own listings');
+  }
+
+  await Marketplace.markAsActive(id);
+
+  res.json(ApiResponse.ok(null, 'Listing reactivated'));
+});
+
 const getMyListings = asyncHandler(async (req, res) => {
-  const { page, limit } = req.query;
+  const { page, limit, status } = req.query;
 
   const data = await Marketplace.findByUser(req.user.id, {
     page: parseInt(page) || 1,
     limit: parseInt(limit) || 20,
+    status,
   });
 
   res.json(ApiResponse.ok(data));
@@ -133,6 +160,57 @@ const getCategories = asyncHandler(async (req, res) => {
   res.json(ApiResponse.ok(categories));
 });
 
+const addOffer = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { amount, message } = req.body;
+  const userId = req.user.id;
+
+  if (!amount) {
+    throw ApiError.badRequest('Offer amount is required');
+  }
+
+  const listing = await Marketplace.findById(id);
+
+  if (!listing || listing.status !== 'ACTIVE') {
+    throw ApiError.notFound('Listing not found or not active');
+  }
+
+  if (listing.userId === userId) {
+    throw ApiError.badRequest('You cannot make an offer on your own listing');
+  }
+
+  const offer = await Marketplace.addOffer(id, userId, parseFloat(amount), message);
+
+  await notificationService.createNotification({
+    userId: listing.userId,
+    type: 'MARKETPLACE',
+    title: 'New Offer',
+    body: `${req.user.fullName} offered KSh ${amount} for "${listing.title}"`,
+    data: { listingId: id },
+  });
+
+  res.json(ApiResponse.ok(offer, 'Offer submitted'));
+});
+
+const getOffers = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  const listing = await Marketplace.findById(id);
+
+  if (!listing) {
+    throw ApiError.notFound('Listing not found');
+  }
+
+  if (listing.userId !== userId) {
+    throw ApiError.forbidden('Only seller can view offers');
+  }
+
+  const offers = await Marketplace.getOffers(id);
+
+  res.json(ApiResponse.ok(offers));
+});
+
 module.exports = {
   createListing,
   getAllListings,
@@ -140,6 +218,9 @@ module.exports = {
   updateListing,
   deleteListing,
   markAsSold,
+  markAsActive,
   getMyListings,
   getCategories,
+  addOffer,
+  getOffers,
 };

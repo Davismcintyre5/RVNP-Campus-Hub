@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { IoHeart } from 'react-icons/io5';
+import { IoHeart, IoHeartOutline } from 'react-icons/io5';
 
 const REACTIONS = [
   { type: 'LIKE', emoji: '👍', label: 'Like' },
@@ -20,6 +20,12 @@ const ReactionPicker = ({ onSelect, onRemove, currentReaction, size = 'md' }) =>
     lg: 'text-3xl',
   };
 
+  const iconSizes = {
+    sm: 18,
+    md: 24,
+    lg: 30,
+  };
+
   const getEmoji = (type) => {
     return REACTIONS.find((r) => r.type === type)?.emoji || '👍';
   };
@@ -38,13 +44,13 @@ const ReactionPicker = ({ onSelect, onRemove, currentReaction, size = 'md' }) =>
       <button
         type="button"
         onClick={() => setShowPicker(!showPicker)}
-        className={`
-          ${sizes[size]}
-          transition-transform hover:scale-110
-          ${currentReaction ? '' : 'text-rvnp-green'}
-        `}
+        className={`${sizes[size]} transition-transform hover:scale-110`}
       >
-        {currentReaction ? getEmoji(currentReaction) : <IoHeart size={size === 'sm' ? 18 : size === 'md' ? 24 : 30} className="text-rvnp-green" />}
+        {currentReaction ? (
+          <span>{getEmoji(currentReaction)}</span>
+        ) : (
+          <IoHeartOutline size={iconSizes[size]} className="text-rvnp-green" />
+        )}
       </button>
 
       {showPicker && (

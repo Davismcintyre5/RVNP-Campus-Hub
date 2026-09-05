@@ -13,5 +13,8 @@ router.get('/:id', marketplaceController.getListingById);
 router.put('/:id', marketplaceController.updateListing);
 router.delete('/:id', marketplaceController.deleteListing);
 router.put('/:id/sold', marketplaceController.markAsSold);
+router.put('/:id/active', marketplaceController.markAsActive);
+router.post('/:id/offers', marketplaceController.addOffer);
+router.get('/:id/offers', marketplaceController.getOffers);
 
 module.exports = router;

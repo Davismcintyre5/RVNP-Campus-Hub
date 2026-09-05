@@ -9,6 +9,7 @@ const findById = async (id) => {
           id: true,
           fullName: true,
           avatarUrl: true,
+          hdmVerified: true,
           phoneNumber: true,
         },
       },
@@ -51,15 +52,26 @@ const softDelete = async (id) => {
   });
 };
 
-const findAll = async ({ page = 1, limit = 20, campusId = null, category = null, search = null }) => {
+const findAll = async ({
+  page = 1,
+  limit = 20,
+  campusId = null,
+  category = null,
+  search = null,
+  status = 'ACTIVE',
+  minPrice = null,
+  maxPrice = null,
+}) => {
   const skip = (page - 1) * limit;
 
   const where = {
-    status: 'ACTIVE',
+    status,
   };
 
   if (campusId) where.campusId = campusId;
   if (category) where.category = category;
+  if (minPrice !== null) where.price = { ...(where.price || {}), gte: minPrice };
+  if (maxPrice !== null) where.price = { ...(where.price || {}), lte: maxPrice };
   if (search) {
     where.OR = [
       { title: { contains: search, mode: 'insensitive' } },
@@ -79,6 +91,7 @@ const findAll = async ({ page = 1, limit = 20, campusId = null, category = null,
             id: true,
             fullName: true,
             avatarUrl: true,
+            hdmVerified: true,
           },
         },
         campus: {
@@ -95,13 +108,11 @@ const findAll = async ({ page = 1, limit = 20, campusId = null, category = null,
   return { listings, total };
 };
 
-const findByUser = async (userId, { page = 1, limit = 20 }) => {
+const findByUser = async (userId, { page = 1, limit = 20, status = null }) => {
   const skip = (page - 1) * limit;
 
-  const where = {
-    userId,
-    status: 'ACTIVE',
-  };
+  const where = { userId };
+  if (status) where.status = status;
 
   const [listings, total] = await Promise.all([
     prisma.marketplaceListing.findMany({
@@ -123,6 +134,45 @@ const markAsSold = async (id) => {
   });
 };
 
+const markAsActive = async (id) => {
+  return prisma.marketplaceListing.update({
+    where: { id },
+    data: { status: 'ACTIVE' },
+  });
+};
+
+const addOffer = async (id, userId, amount, message = null) => {
+  const listing = await prisma.marketplaceListing.findUnique({
+    where: { id },
+    select: { offers: true },
+  });
+
+  const currentOffers = listing?.offers || [];
+  const newOffer = {
+    id: Date.now().toString(),
+    userId,
+    amount,
+    message,
+    createdAt: new Date().toISOString(),
+  };
+
+  currentOffers.push(newOffer);
+
+  return prisma.marketplaceListing.update({
+    where: { id },
+    data: { offers: currentOffers },
+  });
+};
+
+const getOffers = async (id) => {
+  const listing = await prisma.marketplaceListing.findUnique({
+    where: { id },
+    select: { offers: true },
+  });
+
+  return listing?.offers || [];
+};
+
 const getCategories = async () => {
   const listings = await prisma.marketplaceListing.findMany({
     where: { status: 'ACTIVE' },
@@ -133,6 +183,33 @@ const getCategories = async () => {
   return listings.map((l) => l.category);
 };
 
+const getExpiredListings = async () => {
+  const now = new Date();
+
+  return prisma.marketplaceListing.findMany({
+    where: {
+      expiresAt: {
+        lt: now,
+      },
+      status: 'ACTIVE',
+    },
+  });
+};
+
+const expireListings = async () => {
+  const now = new Date();
+
+  return prisma.marketplaceListing.updateMany({
+    where: {
+      expiresAt: {
+        lt: now,
+      },
+      status: 'ACTIVE',
+    },
+    data: { status: 'REMOVED' },
+  });
+};
+
 module.exports = {
   findById,
   create,
@@ -141,5 +218,10 @@ module.exports = {
   findAll,
   findByUser,
   markAsSold,
+  markAsActive,
+  addOffer,
+  getOffers,
   getCategories,
+  getExpiredListings,
+  expireListings,
 };

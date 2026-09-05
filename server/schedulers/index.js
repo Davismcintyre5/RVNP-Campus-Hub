@@ -6,6 +6,7 @@ const backup = require('./backup.js');
 const emailQueue = require('./emailQueue.js');
 const smsQueue = require('./smsQueue.js');
 const cacheCleanup = require('./cacheCleanup.js');
+const marketplaceCleanup = require('./marketplaceCleanup.js');
 const env = require('../config/env.js');
 const logger = require('../utils/logger.js');
 
@@ -15,6 +16,11 @@ const initSchedulers = () => {
   cron.schedule('0 * * * *', () => {
     logger.info('Running story cleanup...');
     storyCleanup();
+  });
+
+  cron.schedule('0 1 * * *', () => {
+    logger.info('Running marketplace cleanup...');
+    marketplaceCleanup();
   });
 
   cron.schedule(env.backup.schedule || '0 2 * * *', () => {
