@@ -1,3 +1,5 @@
+require('./scripts/dnsSet.js');
+
 const express = require('express');
 const http = require('http');
 const path = require('path');
@@ -13,6 +15,7 @@ const requestLogger = require('./middleware/global/requestLogger.js');
 const errorHandler = require('./middleware/global/errorHandler.js');
 const notFound = require('./middleware/global/notFound.js');
 const initSchedulers = require('./schedulers/index.js');
+const initKeepAlive = require('./config/keepAlive.js');
 const { initSocket } = require('./config/socket.js');
 
 const app = express();
@@ -41,6 +44,7 @@ app.get('/', (req, res) => {
     app: 'RVNP Campus Hub',
     tagline: 'RVNP Connected',
     version: '1.0.0',
+    environment: env.server.nodeEnv,
   });
 });
 
@@ -51,6 +55,7 @@ app.get('/api', (req, res) => {
     version: '1.0.0',
     status: 'operational',
     timestamp: new Date().toISOString(),
+    environment: env.server.nodeEnv,
   });
 });
 
@@ -60,6 +65,8 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     message: 'RVNP Campus Hub API is running',
     timestamp: new Date().toISOString(),
+    environment: env.server.nodeEnv,
+    url: env.server.apiUrl,
   });
 });
 
@@ -83,8 +90,10 @@ const startServer = async () => {
   initSchedulers();
 
   server.listen(env.server.port, () => {
-    logger.info(`Server running on http://localhost:${env.server.port}`);
-    logger.info(`Static files served from: ${uploadPath}`);
+    logger.info(`Server running on ${env.server.apiUrl}`);
+    logger.info(`Environment: ${env.server.nodeEnv}`);
+
+    initKeepAlive();
   });
 };
 

@@ -95,6 +95,10 @@ const env = {
     schedule: process.env.BACKUP_SCHEDULE || '0 2 * * *',
     path: process.env.BACKUP_PATH || './backups',
   },
+
+  keepAlive: {
+    enabled: process.env.KEEP_ALIVE_ENABLED === 'true',
+  },
 };
 
 module.exports = env;

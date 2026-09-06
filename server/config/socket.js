@@ -28,18 +28,6 @@ const initSocket = (httpServer) => {
       socket.join(`group:${groupId}`);
     });
 
-    socket.on('leave-user', (userId) => {
-      socket.leave(`user:${userId}`);
-    });
-
-    socket.on('leave-campus', (campusId) => {
-      socket.leave(`campus:${campusId}`);
-    });
-
-    socket.on('leave-group', (groupId) => {
-      socket.leave(`group:${groupId}`);
-    });
-
     socket.on('disconnect', (reason) => {
       console.log(`Client disconnected: ${socket.id}, reason: ${reason}`);
     });
