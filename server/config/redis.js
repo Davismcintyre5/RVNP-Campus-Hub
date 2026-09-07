@@ -4,19 +4,32 @@ const env = require('./env.js');
 let redis = null;
 
 if (env.redis.enabled) {
+  const redisUrl = new URL(env.redis.url);
+  const useTls = redisUrl.protocol === 'rediss:';
+
   redis = new Redis({
-    host: env.redis.url.replace('redis://', '').split(':')[0],
-    port: parseInt(env.redis.url.replace('redis://', '').split(':')[1]) || 6379,
-    password: env.redis.password || undefined,
+    host: redisUrl.hostname,
+    port: parseInt(redisUrl.port) || 6379,
+    password: redisUrl.password || undefined,
+    username: redisUrl.username || undefined,
+    tls: useTls ? {} : undefined,
+    connectTimeout: 10000,
     retryStrategy: (times) => {
-      const delay = Math.min(times * 50, 2000);
-      return delay;
+      if (times > 5) {
+        console.error('Redis max retries reached, giving up');
+        return null;
+      }
+      return Math.min(times * 2000, 10000);
     },
-    maxRetriesPerRequest: 3,
+    maxRetriesPerRequest: 1,
   });
 
   redis.on('connect', () => {
     console.log('Redis connected');
+  });
+
+  redis.on('ready', () => {
+    console.log('Redis ready');
   });
 
   redis.on('error', (err) => {

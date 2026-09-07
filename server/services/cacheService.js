@@ -2,56 +2,98 @@ const redis = require('../config/redis.js');
 const env = require('../config/env.js');
 const logger = require('../utils/logger.js');
 
+const memoryCache = new Map();
+
 const setCache = async (key, value, expirySeconds = 300) => {
   try {
-    if (!env.redis.enabled || !redis) return null;
+    if (env.redis.enabled && redis) {
+      const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
+      await redis.set(key, stringValue, 'EX', expirySeconds);
+      return true;
+    }
 
-    const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
-    await redis.set(key, stringValue, 'EX', expirySeconds);
+    memoryCache.set(key, {
+      value,
+      expiresAt: Date.now() + expirySeconds * 1000,
+    });
     return true;
   } catch (error) {
     logger.error('Cache set error:', error.message);
-    return null;
+    memoryCache.set(key, {
+      value,
+      expiresAt: Date.now() + expirySeconds * 1000,
+    });
+    return true;
   }
 };
 
 const getCache = async (key) => {
   try {
-    if (!env.redis.enabled || !redis) return null;
+    if (env.redis.enabled && redis) {
+      const value = await redis.get(key);
+      if (!value) return null;
 
-    const value = await redis.get(key);
-    if (!value) return null;
-
-    try {
-      return JSON.parse(value);
-    } catch {
-      return value;
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
     }
+
+    const item = memoryCache.get(key);
+    if (!item) return null;
+
+    if (Date.now() > item.expiresAt) {
+      memoryCache.delete(key);
+      return null;
+    }
+
+    return item.value;
   } catch (error) {
     logger.error('Cache get error:', error.message);
-    return null;
+
+    const item = memoryCache.get(key);
+    if (!item) return null;
+
+    if (Date.now() > item.expiresAt) {
+      memoryCache.delete(key);
+      return null;
+    }
+
+    return item.value;
   }
 };
 
 const deleteCache = async (key) => {
   try {
-    if (!env.redis.enabled || !redis) return null;
+    if (env.redis.enabled && redis) {
+      await redis.del(key);
+      return true;
+    }
 
-    await redis.del(key);
+    memoryCache.delete(key);
     return true;
   } catch (error) {
-    logger.error('Cache delete error:', error.message);
-    return null;
+    memoryCache.delete(key);
+    return true;
   }
 };
 
 const deleteByPattern = async (pattern) => {
   try {
-    if (!env.redis.enabled || !redis) return null;
+    if (env.redis.enabled && redis) {
+      const keys = await redis.keys(pattern);
+      if (keys.length > 0) {
+        await redis.del(keys);
+      }
+      return true;
+    }
 
-    const keys = await redis.keys(pattern);
-    if (keys.length > 0) {
-      await redis.del(keys);
+    const regex = new RegExp(pattern.replace('*', '.*'));
+    for (const key of memoryCache.keys()) {
+      if (regex.test(key)) {
+        memoryCache.delete(key);
+      }
     }
     return true;
   } catch (error) {
@@ -62,13 +104,16 @@ const deleteByPattern = async (pattern) => {
 
 const clearAllCache = async () => {
   try {
-    if (!env.redis.enabled || !redis) return null;
+    if (env.redis.enabled && redis) {
+      await redis.flushall();
+      return true;
+    }
 
-    await redis.flushall();
+    memoryCache.clear();
     return true;
   } catch (error) {
-    logger.error('Cache clear all error:', error.message);
-    return null;
+    memoryCache.clear();
+    return true;
   }
 };
 
