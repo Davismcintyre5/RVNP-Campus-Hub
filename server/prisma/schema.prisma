@@ -7,466 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Campus {
-  id          String               @id @default(uuid())
-  name        String
-  location    String?
-  type        CampusType           @default(MAIN)
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-  departments Department[]
-  events      Event[]
-  groups      Group[]
-  listings    MarketplaceListing[]
-  posts       Post[]
-  reels       Reel[]
-  stories     Story[]
-  users       User[]
-
-  @@map("campuses")
-}
-
-model Department {
-  id        String   @id @default(uuid())
-  name      String
-  campusId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  campus    Campus   @relation(fields: [campusId], references: [id], onDelete: Cascade)
-  users     User[]
-
-  @@map("departments")
-}
-
-model User {
-  id                 String                    @id @default(uuid())
-  fullName           String
-  email              String                    @unique
-  phoneNumber        String                    @unique
-  passwordHash       String
-  avatarUrl          String?
-  coverUrl           String?
-  bio                String?
-  role               Role                      @default(STUDENT)
-  accountStatus      AccountStatus             @default(ACTIVE)
-  verificationStatus VerificationStatus        @default(PENDING)
-  campusId           String?
-  departmentId       String?
-  course             String?
-  yearOfStudy        Int?
-  lastSeen           DateTime?
-  createdAt          DateTime                  @default(now())
-  updatedAt          DateTime                  @updatedAt
-  graduationYear     Int?
-  staffId            String?
-  hdmVerified        Boolean                   @default(false)
-  privacySettings    Json?
-  isAI               Boolean                   @default(false)
-  auditLogs          AuditLog[]
-  comments           Comment[]
-  conversations      ConversationParticipant[]
-  events             Event[]
-  followers          Follow[]                  @relation("Following")
-  following          Follow[]                  @relation("Followers")
-  groupMemberships   GroupMember[]
-  groupPosts         GroupPost[]
-  createdGroups      Group[]
-  listings           MarketplaceListing[]
-  receivedMessages   Message[]                 @relation("ReceivedMessages")
-  sentMessages       Message[]                 @relation("SentMessages")
-  notifications      Notification[]
-  posts              Post[]
-  reactions          Reaction[]
-  reels              Reel[]
-  reports            Report[]
-  stories            Story[]
-  storyReactions     StoryReaction[]
-  storyViews         StoryView[]
-  campus             Campus?                   @relation(fields: [campusId], references: [id])
-  department         Department?               @relation(fields: [departmentId], references: [id])
-
-  @@map("users")
-}
-
-model Follow {
-  id          String   @id @default(uuid())
-  followerId  String
-  followingId String
-  createdAt   DateTime @default(now())
-  follower    User     @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
-  following   User     @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
-
-  @@unique([followerId, followingId])
-  @@map("follows")
-}
-
-model Post {
-  id           String      @id @default(uuid())
-  content      Json?
-  privacy      PostPrivacy @default(PUBLIC)
-  userId       String
-  campusId     String?
-  likeCount    Int         @default(0)
-  commentCount Int         @default(0)
-  shareCount   Int         @default(0)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  deletedAt    DateTime?
-  sharedFromId String?
-  comments     Comment[]
-  campus       Campus?     @relation(fields: [campusId], references: [id])
-  sharedFrom   Post?       @relation("PostShares", fields: [sharedFromId], references: [id])
-  shares       Post[]      @relation("PostShares")
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reactions    Reaction[]
-  reports      Report[]
-
-  @@index([userId])
-  @@index([campusId])
-  @@index([createdAt])
-  @@map("posts")
-}
-
-model Reel {
-  id           String     @id @default(uuid())
-  videoUrl     String
-  thumbnailUrl String?
-  caption      String?
-  userId       String
-  campusId     String?
-  viewCount    Int        @default(0)
-  likeCount    Int        @default(0)
-  commentCount Int        @default(0)
-  shareCount   Int        @default(0)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  deletedAt    DateTime?
-  content      Json?
-  privacy      String     @default("PUBLIC")
-  comments     Comment[]
-  reactions    Reaction[]
-  campus       Campus?    @relation(fields: [campusId], references: [id])
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reports      Report[]
-
-  @@index([userId])
-  @@index([campusId])
-  @@index([createdAt])
-  @@map("reels")
-}
-
-model Comment {
-  id          String     @id @default(uuid())
-  content     String
-  userId      String
-  postId      String?
-  reelId      String?
-  parentId    String?
-  likeCount   Int        @default(0)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  deletedAt   DateTime?
-  groupPostId String?
-  groupPost   GroupPost? @relation(fields: [groupPostId], references: [id], onDelete: Cascade)
-  parent      Comment?   @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies     Comment[]  @relation("CommentReplies")
-  post        Post?      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  reel        Reel?      @relation(fields: [reelId], references: [id], onDelete: Cascade)
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reactions   Reaction[]
-  reports     Report[]
-
-  @@index([userId])
-  @@index([postId])
-  @@index([reelId])
-  @@index([groupPostId])
-  @@map("comments")
-}
-
-model Reaction {
-  id        String       @id @default(uuid())
-  type      ReactionType @default(LIKE)
-  userId    String
-  postId    String?
-  reelId    String?
-  commentId String?
-  createdAt DateTime     @default(now())
-  comment   Comment?     @relation(fields: [commentId], references: [id], onDelete: Cascade)
-  post      Post?        @relation(fields: [postId], references: [id], onDelete: Cascade)
-  reel      Reel?        @relation(fields: [reelId], references: [id], onDelete: Cascade)
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, postId])
-  @@unique([userId, reelId])
-  @@unique([userId, commentId])
-  @@map("reactions")
-}
-
-model Conversation {
-  id            String                    @id @default(uuid())
-  type          ConversationType          @default(DIRECT)
-  groupId       String?
-  lastMessageId String?
-  createdAt     DateTime                  @default(now())
-  updatedAt     DateTime                  @updatedAt
-  participants  ConversationParticipant[]
-  group         Group?                    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  messages      Message[]
-
-  @@map("conversations")
-}
-
-model ConversationParticipant {
-  id             String       @id @default(uuid())
-  conversationId String
-  userId         String
-  joinedAt       DateTime     @default(now())
-  leftAt         DateTime?
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([conversationId, userId])
-  @@map("conversation_participants")
-}
-
-model Message {
-  id             String       @id @default(uuid())
-  conversationId String
-  senderId       String
-  recipientId    String?
-  type           MessageType  @default(TEXT)
-  content        Json?
-  readAt         DateTime?
-  createdAt      DateTime     @default(now())
-  deletedAt      DateTime?
-  deliveredAt    DateTime?
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  recipient      User?        @relation("ReceivedMessages", fields: [recipientId], references: [id])
-  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-
-  @@index([conversationId])
-  @@index([senderId])
-  @@index([createdAt])
-  @@map("messages")
-}
-
-model Group {
-  id            String         @id @default(uuid())
-  name          String
-  description   String?
-  avatarUrl     String?
-  campusId      String?
-  createdBy     String
-  memberCount   Int            @default(0)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  deletedAt     DateTime?
-  category      String         @default("General")
-  coverUrl      String?
-  postCount     Int            @default(0)
-  privacy       String         @default("PUBLIC")
-  conversations Conversation[]
-  members       GroupMember[]
-  posts         GroupPost[]
-  campus        Campus?        @relation(fields: [campusId], references: [id])
-  creator       User           @relation(fields: [createdBy], references: [id], onDelete: Cascade)
-
-  @@index([campusId])
-  @@index([category])
-  @@map("groups")
-}
-
-model GroupPost {
-  id           String    @id @default(uuid())
-  content      Json?
-  groupId      String
-  userId       String
-  likeCount    Int       @default(0)
-  commentCount Int       @default(0)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
-  comments     Comment[]
-  group        Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([groupId])
-  @@index([userId])
-  @@map("group_posts")
-}
-
-model GroupMember {
-  id       String   @id @default(uuid())
-  groupId  String
-  userId   String
-  role     String   @default("member")
-  joinedAt DateTime @default(now())
-  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([groupId, userId])
-  @@map("group_members")
-}
-
-model Story {
-  id        String          @id @default(uuid())
-  content   Json
-  privacy   StoryPrivacy    @default(PUBLIC)
-  userId    String
-  campusId  String?
-  viewCount Int             @default(0)
-  expiresAt DateTime
-  createdAt DateTime        @default(now())
-  campus    Campus?         @relation(fields: [campusId], references: [id])
-  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reactions StoryReaction[]
-  views     StoryView[]
-
-  @@index([userId])
-  @@index([expiresAt])
-  @@map("stories")
-}
-
-model StoryView {
-  id        String   @id @default(uuid())
-  storyId   String
-  userId    String
-  createdAt DateTime @default(now())
-  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([storyId, userId])
-  @@map("story_views")
-}
-
-model StoryReaction {
-  id        String       @id @default(uuid())
-  storyId   String
-  userId    String
-  type      ReactionType @default(LIKE)
-  createdAt DateTime     @default(now())
-  story     Story        @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([storyId, userId])
-  @@map("story_reactions")
-}
-
-model Event {
-  id          String      @id @default(uuid())
-  title       String
-  description String?
-  location    String?
-  campusId    String?
-  createdBy   String
-  startTime   DateTime
-  endTime     DateTime
-  status      EventStatus @default(UPCOMING)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  campus      Campus?     @relation(fields: [campusId], references: [id])
-  creator     User        @relation(fields: [createdBy], references: [id], onDelete: Cascade)
-
-  @@index([campusId])
-  @@index([startTime])
-  @@map("events")
-}
-
-model MarketplaceListing {
-  id          String        @id @default(uuid())
-  title       String
-  description String?
-  price       Float
-  category    String
-  images      Json?
-  userId      String
-  campusId    String?
-  status      ListingStatus @default(ACTIVE)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  expiresAt   DateTime?
-  offers      Json?
-  campus      Campus?       @relation(fields: [campusId], references: [id])
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([campusId])
-  @@index([status])
-  @@index([category])
-  @@map("marketplace_listings")
-}
-
-model Notification {
-  id        String           @id @default(uuid())
-  userId    String
-  type      NotificationType
-  title     String
-  body      String
-  data      Json?
-  read      Boolean          @default(false)
-  createdAt DateTime         @default(now())
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, read])
-  @@map("notifications")
-}
-
-model Report {
-  id          String       @id @default(uuid())
-  reporterId  String
-  postId      String?
-  reelId      String?
-  commentId   String?
-  reason      String
-  description String?
-  status      ReportStatus @default(PENDING)
-  createdAt   DateTime     @default(now())
-  reviewedAt  DateTime?
-  reviewedBy  String?
-  comment     Comment?     @relation(fields: [commentId], references: [id], onDelete: Cascade)
-  post        Post?        @relation(fields: [postId], references: [id], onDelete: Cascade)
-  reel        Reel?        @relation(fields: [reelId], references: [id], onDelete: Cascade)
-  reporter    User         @relation(fields: [reporterId], references: [id], onDelete: Cascade)
-
-  @@index([status])
-  @@map("reports")
-}
-
-model AuditLog {
-  id        String   @id @default(uuid())
-  adminId   String
-  action    String
-  details   Json?
-  ipAddress String?
-  createdAt DateTime @default(now())
-  admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
-
-  @@index([adminId])
-  @@index([createdAt])
-  @@map("audit_logs")
-}
-
-model Setting {
-  id        String   @id @default(uuid())
-  key       String   @unique
-  value     Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("settings")
-}
-
-model Legal {
-  id        String   @id @default(uuid())
-  type      String
-  title     String
-  content   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([type])
-  @@map("legals")
-}
-
 enum Role {
   STUDENT
   STAFF
@@ -509,11 +49,11 @@ enum ConversationType {
 enum ReactionType {
   LIKE
   LOVE
+  CARE
   HAHA
   WOW
   SAD
   ANGRY
-  CARE
 }
 
 enum StoryPrivacy {
@@ -559,4 +99,527 @@ enum NotificationType {
   SYSTEM
   MARKETPLACE
   CAMPUS_UPDATE
+  MENTION
+}
+
+model Campus {
+  id           String      @id @default(uuid())
+  name         String
+  location     String?
+  type         CampusType  @default(MAIN)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  users        User[]
+  departments  Department[]
+  posts        Post[]
+  reels        Reel[]
+  groups       Group[]
+  events       Event[]
+  listings     MarketplaceListing[]
+  stories      Story[]
+
+  @@map("campuses")
+}
+
+model Department {
+  id           String   @id @default(uuid())
+  name         String
+  campusId     String
+  campus       Campus   @relation(fields: [campusId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  users        User[]
+
+  @@map("departments")
+}
+
+model User {
+  id                  String              @id @default(uuid())
+  fullName            String
+  email               String              @unique
+  phoneNumber         String              @unique
+  passwordHash        String
+  avatarUrl           String?
+  coverUrl            String?
+  bio                 String?
+  role                Role                @default(STUDENT)
+  accountStatus       AccountStatus       @default(ACTIVE)
+  verificationStatus  VerificationStatus  @default(PENDING)
+  hdmVerified         Boolean             @default(false)
+  isAI                Boolean             @default(false)
+  campusId            String?
+  departmentId        String?
+  course              String?
+  yearOfStudy         Int?
+  staffId             String?
+  graduationYear      Int?
+  privacySettings     Json?
+  lastSeen            DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  campus              Campus?             @relation(fields: [campusId], references: [id], onDelete: SetNull)
+  department          Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  posts               Post[]
+  reels               Reel[]
+  comments            Comment[]
+  reactions           Reaction[]
+  stories             Story[]
+  storyViews          StoryView[]
+  storyReactions      StoryReaction[]
+  sentMessages        Message[]           @relation("SentMessages")
+  receivedMessages    Message[]           @relation("ReceivedMessages")
+  conversations       ConversationParticipant[]
+  groupMemberships    GroupMember[]
+  createdGroups       Group[]
+  groupPosts          GroupPost[]
+  events              Event[]
+  listings            MarketplaceListing[]
+  notifications       Notification[]
+  followers           Follow[]            @relation("Following")
+  following           Follow[]            @relation("Followers")
+  reports             Report[]
+  auditLogs           AuditLog[]
+  badges              UserBadge[]
+
+  @@map("users")
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower    User     @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@map("follows")
+}
+
+model Post {
+  id           String       @id @default(uuid())
+  content      Json?
+  privacy      PostPrivacy  @default(PUBLIC)
+  userId       String
+  campusId     String?
+  sharedFromId String?
+  likeCount    Int          @default(0)
+  commentCount Int          @default(0)
+  shareCount   Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campus       Campus?      @relation(fields: [campusId], references: [id], onDelete: SetNull)
+  sharedFrom   Post?        @relation("PostShares", fields: [sharedFromId], references: [id], onDelete: SetNull)
+  shares       Post[]       @relation("PostShares")
+  comments     Comment[]
+  reactions    Reaction[]
+  reports      Report[]
+  hashtags     Hashtag[]    @relation("PostHashtags")
+
+  @@index([userId])
+  @@index([campusId])
+  @@index([createdAt])
+  @@map("posts")
+}
+
+model Hashtag {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  postCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  posts     Post[]   @relation("PostHashtags")
+
+  @@map("hashtags")
+}
+
+model Badge {
+  id          String      @id @default(uuid())
+  name        String
+  description String
+  icon        String
+  createdAt   DateTime    @default(now())
+
+  users       UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id        String   @id @default(uuid())
+  userId    String
+  badgeId   String
+  earnedAt  DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+model Reel {
+  id           String    @id @default(uuid())
+  videoUrl     String
+  thumbnailUrl String?
+  caption      String?
+  content      Json?
+  privacy      String    @default("PUBLIC")
+  userId       String
+  campusId     String?
+  viewCount    Int       @default(0)
+  likeCount    Int       @default(0)
+  commentCount Int       @default(0)
+  shareCount   Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campus       Campus?   @relation(fields: [campusId], references: [id], onDelete: SetNull)
+  comments     Comment[]
+  reactions    Reaction[]
+  reports      Report[]
+
+  @@index([userId])
+  @@index([campusId])
+  @@index([createdAt])
+  @@map("reels")
+}
+
+model Comment {
+  id          String    @id @default(uuid())
+  content     String
+  userId      String
+  postId      String?
+  reelId      String?
+  groupPostId String?
+  parentId    String?
+  likeCount   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post        Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reel        Reel?     @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  groupPost   GroupPost? @relation(fields: [groupPostId], references: [id], onDelete: Cascade)
+  parent      Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     Comment[] @relation("CommentReplies")
+  reactions   Reaction[]
+  reports     Report[]
+
+  @@index([userId])
+  @@index([postId])
+  @@index([reelId])
+  @@index([groupPostId])
+  @@map("comments")
+}
+
+model Reaction {
+  id          String        @id @default(uuid())
+  type        ReactionType  @default(LIKE)
+  userId      String
+  postId      String?
+  reelId      String?
+  commentId   String?
+  createdAt   DateTime      @default(now())
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post        Post?         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reel        Reel?         @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  comment     Comment?      @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@unique([userId, reelId])
+  @@unique([userId, commentId])
+  @@map("reactions")
+}
+
+model Conversation {
+  id             String                   @id @default(uuid())
+  type           ConversationType         @default(DIRECT)
+  groupId        String?
+  lastMessageId  String?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  group          Group?                   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  participants   ConversationParticipant[]
+  messages       Message[]
+
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  conversationId String
+  userId         String
+  joinedAt       DateTime     @default(now())
+  leftAt         DateTime?
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String        @id @default(uuid())
+  conversationId String
+  senderId       String
+  recipientId    String?
+  type           MessageType   @default(TEXT)
+  content        Json?
+  deliveredAt    DateTime?
+  readAt         DateTime?
+  createdAt      DateTime      @default(now())
+  deletedAt      DateTime?
+
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User          @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient      User?         @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+model Group {
+  id            String       @id @default(uuid())
+  name          String
+  description   String?
+  avatarUrl     String?
+  coverUrl      String?
+  category      String       @default("General")
+  privacy       String       @default("PUBLIC")
+  campusId      String?
+  createdBy     String
+  memberCount   Int          @default(0)
+  postCount     Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  deletedAt     DateTime?
+
+  campus        Campus?      @relation(fields: [campusId], references: [id], onDelete: SetNull)
+  creator       User         @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  members       GroupMember[]
+  posts         GroupPost[]
+  conversations Conversation[]
+
+  @@index([campusId])
+  @@index([category])
+  @@map("groups")
+}
+
+model GroupMember {
+  id        String    @id @default(uuid())
+  groupId   String
+  userId    String
+  role      String    @default("member")
+  joinedAt  DateTime  @default(now())
+
+  group     Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@map("group_members")
+}
+
+model GroupPost {
+  id           String    @id @default(uuid())
+  content      Json?
+  groupId      String
+  userId       String
+  likeCount    Int       @default(0)
+  commentCount Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  group        Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments     Comment[]
+
+  @@index([groupId])
+  @@index([userId])
+  @@map("group_posts")
+}
+
+model Story {
+  id          String        @id @default(uuid())
+  content     Json
+  privacy     StoryPrivacy  @default(PUBLIC)
+  userId      String
+  campusId    String?
+  viewCount   Int           @default(0)
+  expiresAt   DateTime
+  createdAt   DateTime      @default(now())
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campus      Campus?       @relation(fields: [campusId], references: [id], onDelete: SetNull)
+  views       StoryView[]
+  reactions   StoryReaction[]
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("stories")
+}
+
+model StoryView {
+  id        String   @id @default(uuid())
+  storyId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, userId])
+  @@map("story_views")
+}
+
+model StoryReaction {
+  id        String       @id @default(uuid())
+  storyId   String
+  userId    String
+  type      ReactionType @default(LIKE)
+  createdAt DateTime     @default(now())
+
+  story     Story        @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, userId])
+  @@map("story_reactions")
+}
+
+model Event {
+  id          String       @id @default(uuid())
+  title       String
+  description String?
+  location    String?
+  campusId    String?
+  createdBy   String
+  startTime   DateTime
+  endTime     DateTime
+  status      EventStatus  @default(UPCOMING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  campus      Campus?      @relation(fields: [campusId], references: [id], onDelete: SetNull)
+  creator     User         @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@index([campusId])
+  @@index([startTime])
+  @@map("events")
+}
+
+model MarketplaceListing {
+  id          String        @id @default(uuid())
+  title       String
+  description String?
+  price       Float
+  category    String
+  images      Json?
+  userId      String
+  campusId    String?
+  status      ListingStatus @default(ACTIVE)
+  offers      Json?
+  expiresAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campus      Campus?       @relation(fields: [campusId], references: [id], onDelete: SetNull)
+
+  @@index([campusId])
+  @@index([status])
+  @@index([category])
+  @@map("marketplace_listings")
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  userId      String
+  type        NotificationType
+  title       String
+  body        String
+  data        Json?
+  read        Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@map("notifications")
+}
+
+model Report {
+  id          String       @id @default(uuid())
+  reporterId  String
+  postId      String?
+  reelId      String?
+  commentId   String?
+  reason      String
+  description String?
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  reviewedAt  DateTime?
+  reviewedBy  String?
+
+  reporter    User         @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  post        Post?        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reel        Reel?        @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  comment     Comment?     @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("reports")
+}
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  adminId     String
+  action      String
+  details     Json?
+  ipAddress   String?
+  createdAt   DateTime  @default(now())
+
+  admin       User      @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Setting {
+  id          String    @id @default(uuid())
+  key         String    @unique
+  value       Json
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("settings")
+}
+
+model Legal {
+  id          String    @id @default(uuid())
+  type        String
+  title       String
+  content     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([type])
+  @@map("legals")
 }

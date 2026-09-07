@@ -1,6 +1,7 @@
 const prisma = require('../../config/database.js');
 const Conversation = require('../../models/client/Conversation.js');
 const Message = require('../../models/client/Message.js');
+const Badge = require('../../models/client/Badge.js');
 const ApiResponse = require('../../utils/ApiResponse.js');
 const ApiError = require('../../utils/ApiError.js');
 const asyncHandler = require('../../utils/asyncHandler.js');
@@ -137,6 +138,8 @@ const sendMessage = asyncHandler(async (req, res) => {
   if (otherParticipant) {
     socketService.notifyNewMessage(otherParticipant.userId, message);
   }
+
+  await Badge.checkAndAwardBadges(userId);
 
   res.status(201).json(ApiResponse.created(message));
 });

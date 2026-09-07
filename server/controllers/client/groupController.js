@@ -1,4 +1,5 @@
 const Group = require('../../models/client/Group.js');
+const Badge = require('../../models/client/Badge.js');
 const ApiResponse = require('../../utils/ApiResponse.js');
 const ApiError = require('../../utils/ApiError.js');
 const asyncHandler = require('../../utils/asyncHandler.js');
@@ -26,6 +27,8 @@ const createGroup = asyncHandler(async (req, res) => {
   });
 
   await Group.addMember(group.id, userId, 'ADMIN');
+
+  await Badge.checkAndAwardBadges(userId);
 
   res.status(201).json(ApiResponse.created(group));
 });
@@ -214,6 +217,8 @@ const createGroupPost = asyncHandler(async (req, res) => {
   }
 
   const post = await Group.createGroupPost(id, userId, content);
+
+  await Badge.checkAndAwardBadges(userId);
 
   res.status(201).json(ApiResponse.created(post));
 });

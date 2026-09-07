@@ -1,5 +1,6 @@
 const Post = require('../../models/client/Post.js');
 const Reaction = require('../../models/client/Reaction.js');
+const Badge = require('../../models/client/Badge.js');
 const ApiResponse = require('../../utils/ApiResponse.js');
 const ApiError = require('../../utils/ApiError.js');
 const asyncHandler = require('../../utils/asyncHandler.js');
@@ -19,6 +20,8 @@ const createPost = asyncHandler(async (req, res) => {
     userId,
     campusId: campusId || req.user.campusId,
   });
+
+  await Badge.checkAndAwardBadges(userId);
 
   res.status(201).json(ApiResponse.created(post));
 });
@@ -135,6 +138,8 @@ const reactToPost = asyncHandler(async (req, res) => {
       body: `${req.user.fullName} reacted to your post`,
     });
   }
+
+  await Badge.checkAndAwardBadges(userId);
 
   res.json(ApiResponse.ok(reaction, 'Reaction added'));
 });

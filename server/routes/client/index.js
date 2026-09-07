@@ -20,6 +20,9 @@ const uploadRoutes = require('./uploadRoutes.js');
 const privacyRoutes = require('./privacyRoutes.js');
 const friendRoutes = require('./friendRoutes.js');
 const aiRoutes = require('./aiRoutes.js');
+const hashtagRoutes = require('./hashtagRoutes.js');
+const badgeRoutes = require('./badgeRoutes.js');
+const leaderboardRoutes = require('./leaderboardRoutes.js');
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
@@ -40,5 +43,8 @@ router.use('/upload', uploadRoutes);
 router.use('/privacy', privacyRoutes);
 router.use('/friends', friendRoutes);
 router.use('/ai', aiRoutes);
+router.use('/hashtags', hashtagRoutes);
+router.use('/badges', badgeRoutes);
+router.use('/leaderboard', leaderboardRoutes);
 
 module.exports = router;
