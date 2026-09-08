@@ -116,6 +116,20 @@ const createShare = async (postId, userId, content = null) => {
   });
 };
 
+const update = async (id, data) => {
+  return prisma.post.update({
+    where: { id },
+    data,
+  });
+};
+
+const softDelete = async (id) => {
+  return prisma.post.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
+};
+
 const findByUser = async (userId, { page = 1, limit = 20 }) => {
   const skip = (page - 1) * limit;
 
