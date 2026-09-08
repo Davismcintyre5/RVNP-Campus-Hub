@@ -32,6 +32,7 @@ const create = async (data) => {
           id: true,
           fullName: true,
           avatarUrl: true,
+          hdmVerified: true,
         },
       },
     },
@@ -64,9 +65,7 @@ const findAll = async ({
 }) => {
   const skip = (page - 1) * limit;
 
-  const where = {
-    status,
-  };
+  const where = { status };
 
   if (campusId) where.campusId = campusId;
   if (category) where.category = category;
@@ -183,19 +182,6 @@ const getCategories = async () => {
   return listings.map((l) => l.category);
 };
 
-const getExpiredListings = async () => {
-  const now = new Date();
-
-  return prisma.marketplaceListing.findMany({
-    where: {
-      expiresAt: {
-        lt: now,
-      },
-      status: 'ACTIVE',
-    },
-  });
-};
-
 const expireListings = async () => {
   const now = new Date();
 
@@ -222,6 +208,5 @@ module.exports = {
   addOffer,
   getOffers,
   getCategories,
-  getExpiredListings,
   expireListings,
 };

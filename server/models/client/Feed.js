@@ -39,6 +39,7 @@ const getFeed = async (userId, { page = 1, limit = 20 }) => {
             id: true,
             fullName: true,
             avatarUrl: true,
+            hdmVerified: true,
             campus: {
               select: {
                 id: true,
@@ -87,6 +88,7 @@ const getCampusFeed = async (campusId, { page = 1, limit = 20 }) => {
             id: true,
             fullName: true,
             avatarUrl: true,
+            hdmVerified: true,
           },
         },
         _count: {

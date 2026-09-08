@@ -21,6 +21,7 @@ const findAll = async ({ page = 1, limit = 10, status = null }) => {
             fullName: true,
             email: true,
             avatarUrl: true,
+            hdmVerified: true,
           },
         },
         post: {
@@ -62,6 +63,8 @@ const findById = async (id) => {
           id: true,
           fullName: true,
           email: true,
+          avatarUrl: true,
+          hdmVerified: true,
         },
       },
       post: true,

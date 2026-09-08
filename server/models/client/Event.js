@@ -9,6 +9,7 @@ const findById = async (id) => {
           id: true,
           fullName: true,
           avatarUrl: true,
+          hdmVerified: true,
         },
       },
       campus: {
@@ -30,6 +31,7 @@ const create = async (data) => {
           id: true,
           fullName: true,
           avatarUrl: true,
+          hdmVerified: true,
         },
       },
     },
@@ -69,6 +71,7 @@ const findAll = async ({ page = 1, limit = 20, campusId = null, status = null })
             id: true,
             fullName: true,
             avatarUrl: true,
+            hdmVerified: true,
           },
         },
         campus: {

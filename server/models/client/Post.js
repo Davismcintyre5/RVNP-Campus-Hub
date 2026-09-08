@@ -9,6 +9,7 @@ const findById = async (id) => {
           id: true,
           fullName: true,
           avatarUrl: true,
+          hdmVerified: true,
           campus: {
             select: {
               id: true,
@@ -30,6 +31,7 @@ const findById = async (id) => {
               id: true,
               fullName: true,
               avatarUrl: true,
+              hdmVerified: true,
             },
           },
         },
@@ -43,6 +45,7 @@ const findById = async (id) => {
               id: true,
               fullName: true,
               avatarUrl: true,
+              hdmVerified: true,
             },
           },
         },
@@ -66,6 +69,7 @@ const create = async (data) => {
           id: true,
           fullName: true,
           avatarUrl: true,
+          hdmVerified: true,
         },
       },
     },
@@ -93,6 +97,7 @@ const createShare = async (postId, userId, content = null) => {
           id: true,
           fullName: true,
           avatarUrl: true,
+          hdmVerified: true,
         },
       },
       sharedFrom: {
@@ -102,25 +107,12 @@ const createShare = async (postId, userId, content = null) => {
               id: true,
               fullName: true,
               avatarUrl: true,
+              hdmVerified: true,
             },
           },
         },
       },
     },
-  });
-};
-
-const update = async (id, data) => {
-  return prisma.post.update({
-    where: { id },
-    data,
-  });
-};
-
-const softDelete = async (id) => {
-  return prisma.post.update({
-    where: { id },
-    data: { deletedAt: new Date() },
   });
 };
 
@@ -144,6 +136,7 @@ const findByUser = async (userId, { page = 1, limit = 20 }) => {
             id: true,
             fullName: true,
             avatarUrl: true,
+            hdmVerified: true,
           },
         },
         sharedFrom: {
@@ -153,8 +146,46 @@ const findByUser = async (userId, { page = 1, limit = 20 }) => {
                 id: true,
                 fullName: true,
                 avatarUrl: true,
+                hdmVerified: true,
               },
             },
+          },
+        },
+        _count: {
+          select: {
+            comments: true,
+            reactions: true,
+          },
+        },
+      },
+    }),
+    prisma.post.count({ where }),
+  ]);
+
+  return { posts, total };
+};
+
+const findByCampus = async (campusId, { page = 1, limit = 20 }) => {
+  const skip = (page - 1) * limit;
+
+  const where = {
+    campusId,
+    deletedAt: null,
+  };
+
+  const [posts, total] = await Promise.all([
+    prisma.post.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            avatarUrl: true,
+            hdmVerified: true,
           },
         },
         _count: {
@@ -213,6 +244,7 @@ module.exports = {
   update,
   softDelete,
   findByUser,
+  findByCampus,
   incrementLike,
   decrementLike,
   incrementComment,

@@ -9,6 +9,7 @@ const findById = async (id) => {
           id: true,
           fullName: true,
           avatarUrl: true,
+          hdmVerified: true,
         },
       },
       recipient: {
@@ -16,6 +17,7 @@ const findById = async (id) => {
           id: true,
           fullName: true,
           avatarUrl: true,
+          hdmVerified: true,
         },
       },
     },
@@ -31,6 +33,7 @@ const create = async (data) => {
           id: true,
           fullName: true,
           avatarUrl: true,
+          hdmVerified: true,
         },
       },
     },
@@ -57,6 +60,7 @@ const findByConversation = async (conversationId, { page = 1, limit = 50 }) => {
             id: true,
             fullName: true,
             avatarUrl: true,
+            hdmVerified: true,
           },
         },
       },
@@ -111,23 +115,6 @@ const getUnreadCount = async (userId) => {
   });
 };
 
-const getMessageStatus = async (messageId) => {
-  const message = await prisma.message.findUnique({
-    where: { id: messageId },
-    select: {
-      id: true,
-      deliveredAt: true,
-      readAt: true,
-    },
-  });
-
-  if (!message) return null;
-
-  if (message.readAt) return 'READ';
-  if (message.deliveredAt) return 'DELIVERED';
-  return 'SENT';
-};
-
 module.exports = {
   findById,
   create,
@@ -136,5 +123,4 @@ module.exports = {
   markAsDelivered,
   softDelete,
   getUnreadCount,
-  getMessageStatus,
 };
