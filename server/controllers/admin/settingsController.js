@@ -4,6 +4,15 @@ const ApiResponse = require('../../utils/ApiResponse.js');
 const ApiError = require('../../utils/ApiError.js');
 const asyncHandler = require('../../utils/asyncHandler.js');
 
+const UPLOAD_DEFAULTS = {
+  maxFileSize: 200,
+  maxImages: 10,
+  maxVideos: 1,
+  allowedImageTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+  allowedVideoTypes: ['video/mp4', 'video/webm', 'video/quicktime'],
+  provider: 'cloudinary',
+};
+
 const getAllSettings = asyncHandler(async (req, res) => {
   const [general, campuses, departments] = await Promise.all([
     Settings.getGeneralSettings(),
@@ -107,6 +116,45 @@ const deleteSetting = asyncHandler(async (req, res) => {
   await Settings.deleteSetting(key);
 
   res.json(ApiResponse.ok(null, 'Setting deleted successfully'));
+});
+
+const getUploadSettings = asyncHandler(async (req, res) => {
+  const settings = await Settings.getGeneralSettings();
+
+  const uploadSettings = {
+    maxFileSize: settings.maxFileSize || UPLOAD_DEFAULTS.maxFileSize,
+    maxImages: settings.maxImages || UPLOAD_DEFAULTS.maxImages,
+    maxVideos: settings.maxVideos || UPLOAD_DEFAULTS.maxVideos,
+    allowedImageTypes: settings.allowedImageTypes || UPLOAD_DEFAULTS.allowedImageTypes,
+    allowedVideoTypes: settings.allowedVideoTypes || UPLOAD_DEFAULTS.allowedVideoTypes,
+    provider: settings.uploadProvider || UPLOAD_DEFAULTS.provider,
+  };
+
+  res.json(ApiResponse.ok(uploadSettings));
+});
+
+const updateUploadSettings = asyncHandler(async (req, res) => {
+  const {
+    maxFileSize,
+    maxImages,
+    maxVideos,
+    allowedImageTypes,
+    allowedVideoTypes,
+    provider,
+  } = req.body;
+
+  const settings = {};
+
+  if (maxFileSize !== undefined) settings.maxFileSize = parseInt(maxFileSize);
+  if (maxImages !== undefined) settings.maxImages = parseInt(maxImages);
+  if (maxVideos !== undefined) settings.maxVideos = parseInt(maxVideos);
+  if (allowedImageTypes) settings.allowedImageTypes = allowedImageTypes;
+  if (allowedVideoTypes) settings.allowedVideoTypes = allowedVideoTypes;
+  if (provider) settings.uploadProvider = provider;
+
+  const result = await Settings.setMultipleSettings(settings);
+
+  res.json(ApiResponse.ok(result, 'Upload settings updated'));
 });
 
 const getCampuses = asyncHandler(async (req, res) => {
@@ -290,6 +338,8 @@ module.exports = {
   getSettingByKey,
   updateGeneralSettings,
   deleteSetting,
+  getUploadSettings,
+  updateUploadSettings,
   getCampuses,
   getCampusById,
   createCampus,

@@ -13,6 +13,10 @@ router.get('/general', settingsController.getGeneralSettings);
 router.put('/general', requireSuperAdmin, auditLog('UPDATE_SETTINGS'), settingsController.updateGeneralSettings);
 router.patch('/general', requireSuperAdmin, auditLog('UPDATE_SETTINGS'), settingsController.updateGeneralSettings);
 
+router.get('/upload', settingsController.getUploadSettings);
+router.put('/upload', requireSuperAdmin, auditLog('UPDATE_UPLOAD_SETTINGS'), settingsController.updateUploadSettings);
+router.patch('/upload', requireSuperAdmin, auditLog('UPDATE_UPLOAD_SETTINGS'), settingsController.updateUploadSettings);
+
 router.get('/campuses', settingsController.getCampuses);
 router.get('/campuses/:id', settingsController.getCampusById);
 router.post('/campuses', requireSuperAdmin, auditLog('CREATE_CAMPUS'), settingsController.createCampus);

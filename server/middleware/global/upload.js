@@ -2,7 +2,50 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const env = require('../../config/env.js');
+const prisma = require('../../config/database.js');
 const ApiError = require('../../utils/ApiError.js');
+
+const DEFAULTS = {
+  maxFileSize: 200,
+  maxImages: 10,
+  allowedImageTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+  allowedVideoTypes: ['video/mp4', 'video/webm', 'video/quicktime'],
+};
+
+const getUploadConfig = async () => {
+  try {
+    const settings = await prisma.setting.findMany({
+      where: {
+        key: {
+          in: ['maxFileSize', 'maxImages', 'maxVideos', 'allowedImageTypes', 'allowedVideoTypes', 'uploadProvider'],
+        },
+      },
+    });
+
+    const config = {};
+    settings.forEach((setting) => {
+      config[setting.key] = setting.value;
+    });
+
+    return {
+      maxFileSize: (config.maxFileSize || DEFAULTS.maxFileSize) * 1024 * 1024,
+      maxImages: config.maxImages || DEFAULTS.maxImages,
+      maxVideos: config.maxVideos || 1,
+      allowedImageTypes: config.allowedImageTypes || DEFAULTS.allowedImageTypes,
+      allowedVideoTypes: config.allowedVideoTypes || DEFAULTS.allowedVideoTypes,
+      provider: config.uploadProvider || env.upload.provider,
+    };
+  } catch {
+    return {
+      maxFileSize: DEFAULTS.maxFileSize * 1024 * 1024,
+      maxImages: DEFAULTS.maxImages,
+      maxVideos: 1,
+      allowedImageTypes: DEFAULTS.allowedImageTypes,
+      allowedVideoTypes: DEFAULTS.allowedVideoTypes,
+      provider: env.upload.provider,
+    };
+  }
+};
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -19,31 +62,48 @@ const storage = multer.diskStorage({
   },
 });
 
-const fileFilter = (req, file, cb) => {
-  const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-  const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
-  const allowedAudioTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg'];
+const fileFilter = async (req, file, cb) => {
+  const config = await getUploadConfig();
 
   if (
-    allowedImageTypes.includes(file.mimetype) ||
-    allowedVideoTypes.includes(file.mimetype) ||
-    allowedAudioTypes.includes(file.mimetype)
+    config.allowedImageTypes.includes(file.mimetype) ||
+    config.allowedVideoTypes.includes(file.mimetype)
   ) {
     cb(null, true);
   } else {
-    cb(new ApiError(400, 'File type not allowed'), false);
+    cb(new ApiError(400, `File type not allowed. Allowed: ${[...config.allowedImageTypes, ...config.allowedVideoTypes].join(', ')}`), false);
   }
 };
 
-const upload = multer({
-  storage,
-  fileFilter,
-  limits: {
-    fileSize: 50 * 1024 * 1024,
-  },
-});
+const createUploader = async () => {
+  const config = await getUploadConfig();
 
-const uploadSingle = upload.single('file');
-const uploadMultiple = upload.array('files', 10);
+  return multer({
+    storage,
+    fileFilter,
+    limits: {
+      fileSize: config.maxFileSize,
+      files: config.maxImages,
+    },
+  });
+};
 
-module.exports = { upload, uploadSingle, uploadMultiple };
+const uploadSingle = async (req, res, next) => {
+  try {
+    const uploader = await createUploader();
+    return uploader.single('file')(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const uploadMultiple = async (req, res, next) => {
+  try {
+    const uploader = await createUploader();
+    return uploader.array('files', 10)(req, res, next);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { uploadSingle, uploadMultiple };
