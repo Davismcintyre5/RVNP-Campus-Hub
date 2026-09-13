@@ -1,10 +1,12 @@
 const Post = require('../../models/client/Post.js');
 const Reaction = require('../../models/client/Reaction.js');
 const Badge = require('../../models/client/Badge.js');
+const Hashtag = require('../../models/client/Hashtag.js');
 const ApiResponse = require('../../utils/ApiResponse.js');
 const ApiError = require('../../utils/ApiError.js');
 const asyncHandler = require('../../utils/asyncHandler.js');
 const notificationService = require('../../services/notificationService.js');
+const { extractHashtags } = require('../../utils/hashtagParser.js');
 
 const createPost = asyncHandler(async (req, res) => {
   const { content, privacy, campusId } = req.body;
@@ -21,7 +23,18 @@ const createPost = asyncHandler(async (req, res) => {
     campusId: campusId || req.user.campusId,
   });
 
-  await Badge.checkAndAwardBadges(userId);
+  // Extract hashtags
+  if (content?.text) {
+    const hashtags = extractHashtags(content.text);
+    for (const tag of hashtags) {
+      await Hashtag.upsert(tag);
+    }
+  }
+
+  // Check and award badges (only for non-guests)
+  if (req.user.role !== 'GUEST') {
+    await Badge.checkAndAwardBadges(userId);
+  }
 
   res.status(201).json(ApiResponse.created(post));
 });
@@ -139,7 +152,9 @@ const reactToPost = asyncHandler(async (req, res) => {
     });
   }
 
-  await Badge.checkAndAwardBadges(userId);
+  if (req.user.role !== 'GUEST') {
+    await Badge.checkAndAwardBadges(userId);
+  }
 
   res.json(ApiResponse.ok(reaction, 'Reaction added'));
 });

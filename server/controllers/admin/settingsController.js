@@ -157,6 +157,50 @@ const updateUploadSettings = asyncHandler(async (req, res) => {
   res.json(ApiResponse.ok(result, 'Upload settings updated'));
 });
 
+const getAIContext = asyncHandler(async (req, res) => {
+  const settings = await Settings.getGeneralSettings();
+
+  const context = {
+    courses: settings.aiContextCourses || '',
+    campuses: settings.aiContextCampuses || '',
+    admissions: settings.aiContextAdmissions || '',
+    fees: settings.aiContextFees || '',
+    contact: settings.aiContextContact || '',
+    additional: settings.aiContextAdditional || '',
+    lastUpdated: settings.aiContextLastUpdated || null,
+    updatedBy: settings.aiContextUpdatedBy || null,
+  };
+
+  res.json(ApiResponse.ok(context));
+});
+
+const updateAIContext = asyncHandler(async (req, res) => {
+  const {
+    courses,
+    campuses,
+    admissions,
+    fees,
+    contact,
+    additional,
+  } = req.body;
+
+  const settings = {};
+
+  if (courses !== undefined) settings.aiContextCourses = courses;
+  if (campuses !== undefined) settings.aiContextCampuses = campuses;
+  if (admissions !== undefined) settings.aiContextAdmissions = admissions;
+  if (fees !== undefined) settings.aiContextFees = fees;
+  if (contact !== undefined) settings.aiContextContact = contact;
+  if (additional !== undefined) settings.aiContextAdditional = additional;
+
+  settings.aiContextLastUpdated = new Date().toISOString();
+  settings.aiContextUpdatedBy = req.user.fullName;
+
+  const result = await Settings.setMultipleSettings(settings);
+
+  res.json(ApiResponse.ok(result, 'AI context updated successfully'));
+});
+
 const getCampuses = asyncHandler(async (req, res) => {
   const campuses = await prisma.campus.findMany({
     include: {
@@ -340,6 +384,8 @@ module.exports = {
   deleteSetting,
   getUploadSettings,
   updateUploadSettings,
+  getAIContext,
+  updateAIContext,
   getCampuses,
   getCampusById,
   createCampus,

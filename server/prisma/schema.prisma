@@ -11,6 +11,7 @@ enum Role {
   STUDENT
   STAFF
   ALUMNI
+  GUEST
   ADMIN
   SUPER_ADMIN
 }

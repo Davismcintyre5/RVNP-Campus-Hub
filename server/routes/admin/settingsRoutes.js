@@ -17,6 +17,10 @@ router.get('/upload', settingsController.getUploadSettings);
 router.put('/upload', requireSuperAdmin, auditLog('UPDATE_UPLOAD_SETTINGS'), settingsController.updateUploadSettings);
 router.patch('/upload', requireSuperAdmin, auditLog('UPDATE_UPLOAD_SETTINGS'), settingsController.updateUploadSettings);
 
+router.get('/ai-context', settingsController.getAIContext);
+router.put('/ai-context', requireSuperAdmin, auditLog('UPDATE_AI_CONTEXT'), settingsController.updateAIContext);
+router.patch('/ai-context', requireSuperAdmin, auditLog('UPDATE_AI_CONTEXT'), settingsController.updateAIContext);
+
 router.get('/campuses', settingsController.getCampuses);
 router.get('/campuses/:id', settingsController.getCampusById);
 router.post('/campuses', requireSuperAdmin, auditLog('CREATE_CAMPUS'), settingsController.createCampus);

@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RVNP Campus Hub — Software Documentation for Copyright Registration</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Ccircle cx='256' cy='256' r='240' fill='%23006400'/%3E%3Ctext x='256' y='320' text-anchor='middle' fill='white' font-size='240' font-weight='bold' font-family='Arial'%3ER%3C/text%3E%3C/svg%3E">
+    <style>
+        :root {
+            --green-900: #004d00; --green-800: #006400; --green-700: #008000; --green-100: #c8e6c9; --green-50: #e8f5e9;
+            --red-600: #cc0000; --red-50: #ffebee;
+            --gray-900: #111827; --gray-700: #374151; --gray-600: #4b5563; --gray-500: #6b7280;
+            --gray-200: #e5e7eb; --gray-100: #f3f4f6; --gray-50: #f9fafb;
+            --white: #ffffff; --amber-600: #d97706; --blue-500: #3b82f6;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: var(--gray-900); background: var(--gray-100); line-height: 1.7; }
+        .document { max-width: 210mm; margin: 0 auto; background: var(--white); box-shadow: 0 0 20px rgba(0,0,0,0.08); }
+        .cover { background: linear-gradient(135deg, #004d00, #006400, #008000); color: var(--white); padding: 80px 60px; text-align: center; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+        .cover .logo { margin-bottom: 24px; }
+        .cover h1 { font-size: 42px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; }
+        .cover .subtitle { font-size: 20px; color: rgba(255,255,255,0.85); font-weight: 400; margin-bottom: 48px; }
+        .cover .tagline { font-size: 18px; color: #ffffff; margin-bottom: 32px; font-weight: 500; }
+        .cover .meta { font-size: 16px; color: rgba(255,255,255,0.85); line-height: 2.2; }
+        .cover .meta strong { color: var(--white); }
+        .content { padding: 60px; }
+        h2 { font-size: 28px; font-weight: 700; color: var(--green-900); margin: 48px 0 20px; padding-bottom: 12px; border-bottom: 3px solid var(--green-900); page-break-before: always; }
+        h2:first-of-type { page-break-before: auto; margin-top: 0; }
+        h3 { font-size: 20px; font-weight: 600; color: var(--gray-900); margin: 28px 0 12px; }
+        h4 { font-size: 16px; font-weight: 600; color: var(--gray-700); margin: 20px 0 8px; }
+        p { font-size: 15px; color: var(--gray-700); margin-bottom: 14px; text-align: justify; }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 14px; }
+        table th { background: var(--green-900); color: var(--white); padding: 12px 16px; text-align: left; font-weight: 600; }
+        table td { padding: 10px 16px; border-bottom: 1px solid var(--gray-200); }
+        table tr:nth-child(even) td { background: var(--gray-50); }
+        pre { background: var(--gray-900); color: var(--green-50); padding: 20px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.6; margin: 16px 0 24px; }
+        .features-list { list-style: none; padding: 0; margin: 8px 0 16px; }
+        .features-list li { padding: 6px 0 6px 24px; position: relative; font-size: 14px; color: var(--gray-600); }
+        .features-list li::before { content: "•"; position: absolute; left: 4px; color: var(--green-800); font-weight: bold; }
+        .architecture-diagram { background: var(--gray-900); color: var(--green-50); padding: 24px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.8; margin: 16px 0 24px; text-align: center; }
+        .note { background: #fff8e1; border-left: 4px solid var(--amber-600); padding: 14px 18px; margin: 16px 0; font-size: 14px; color: var(--gray-700); border-radius: 0 8px 8px 0; }
+        .screenshot-placeholder { border: 2px dashed var(--gray-200); border-radius: 12px; padding: 40px; text-align: center; margin: 20px 0 28px; background: var(--gray-50); }
+        .screenshot-placeholder .number { display: inline-block; background: var(--green-900); color: var(--white); width: 36px; height: 36px; border-radius: 50%; line-height: 36px; font-weight: 700; font-size: 16px; margin-bottom: 10px; }
+        .screenshot-placeholder .caption { font-size: 14px; color: var(--gray-500); font-style: italic; margin-top: 8px; }
+        .footer { text-align: center; padding: 40px; border-top: 1px solid var(--gray-200); color: var(--gray-500); font-size: 13px; }
+        @media print { body { background: var(--white); } .document { box-shadow: none; max-width: 100%; } .content { padding: 30px 40px; } h2 { page-break-before: always; } h2:first-of-type { page-break-before: auto; } }
+    </style>
+</head>
+<body>
+
+<div class="document">
+
+    <!-- COVER PAGE -->
+    <div class="cover">
+        <div class="logo">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="160" height="160">
+                <circle cx="256" cy="256" r="240" fill="rgba(255,255,255,0.1)"/>
+                <text x="256" y="320" text-anchor="middle" fill="white" font-size="200" font-weight="bold" font-family="Arial">R</text>
+                <text x="256" y="380" text-anchor="middle" fill="white" font-size="24" font-weight="bold" font-family="Arial">RVNP Campus Hub</text>
+                <text x="256" y="410" text-anchor="middle" fill="#ffffff" font-size="16" font-family="Arial">RVNP Connected</text>
+            </svg>
+        </div>
+        <h1>RVNP Campus Hub</h1>
+        <p class="tagline">RVNP Connected</p>
+        <p class="subtitle">Software Documentation for Copyright Registration</p>
+        <div class="meta">
+            <strong>Developer:</strong> Davis Okoth<br>
+            <strong>Company:</strong> HDM<br>
+            <strong>Date:</strong> September 2026<br>
+            <strong>Version:</strong> 1.0.0<br>
+            <strong>Classification:</strong> Social + Campus Management Platform<br>
+            <strong>URL:</strong> https://rvnpcampushub.pxxl.click<br>
+            <strong>API:</strong> https://rvnpcampusapi.onrender.com<br>
+            <strong>AI Engine:</strong> HDM AI
+        </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+        <!-- SECTION 1: ABSTRACT -->
+        <h2>1. ABSTRACT</h2>
+        <p>
+            RVNP Campus Hub is a comprehensive, all-in-one social and campus management platform designed specifically for Rift Valley National Polytechnic (RVNP). The software unifies the core features of Facebook, Messenger, WhatsApp, TikTok, and Telegram into a single platform tailored for an educational institution. It connects all five RVNP campuses — Main Campus, Nakuru City Campus, Kericho Campus, Mwachon Campus, and Kureisoi Campus — into one digital community.
+        </p>
+        <p>
+            The platform serves three main purposes: (1) marketing Rift Valley National Polytechnic to prospective students and the wider public, (2) sharing official information instantly from administration to students and staff, and (3) building an engaged campus community across all campuses. It additionally integrates an artificial intelligence assistant called HDM AI that functions as a school assistant, capable of answering questions about the institution from guests, students, and staff.
+        </p>
+        <p>
+            The software is built using a modern MERN stack with PostgreSQL: React 18 with Vite and Tailwind CSS for the frontend, Node.js with Express for the backend API, PostgreSQL with Prisma ORM for the database, Redis for caching and sessions, Cloudinary for media storage, and Socket.io for real-time communication. It is deployed as a Progressive Web Application (PWA) accessible from any modern browser, and it supports mobile and desktop experiences through responsive design.
+        </p>
+        <p>
+            The system incorporates fifteen major feature modules: authentication, social feed, reels, stories, messaging, groups, events, marketplace, notifications, search, privacy controls, hashtags, mentions, badges, leaderboards, and a full administrative dashboard. Each module is designed with strict role-based access control supporting Students, Staff, Alumni, Guests, Admins, and Super Admins.
+        </p>
+
+        <!-- SECTION 2: INTRODUCTION -->
+        <h2>2. INTRODUCTION</h2>
+
+        <h3>2.1 Problem Statement</h3>
+        <p>
+            Educational institutions such as Rift Valley National Polytechnic face persistent challenges in digital communication and community engagement. Official information is scattered across multiple channels including notice boards, WhatsApp groups, email, and social media pages that are not institution-controlled. Students on different campuses often feel disconnected from one another, and there is no unified digital space where students, staff, and alumni can interact. Additionally, prospective students and the general public have limited direct access to accurate information about the institution, relying instead on informal sources.
+        </p>
+        <p>
+            Existing solutions are fragmented: Facebook and WhatsApp are generic platforms not designed for educational institutions; institutional websites are static and do not support interaction; and multiple separate tools force users to switch between apps. There is a clear need for a single, integrated platform that serves marketing, information sharing, and community engagement in one place.
+        </p>
+
+        <h3>2.2 Solution Overview</h3>
+        <p>
+            RVNP Campus Hub solves these problems by providing one platform that combines the best features of the most widely used social applications. From Facebook it takes posts, pages, groups, and events. From Messenger it takes direct messaging. From WhatsApp it takes status updates and simple encrypted chat. From TikTok it takes short-form vertical videos (Reels). From Telegram it takes channels and large community groups. All of these features are re-designed around the specific needs of an educational institution.
+        </p>
+        <p>
+            The core objectives are threefold. First, <strong>marketing</strong>: the platform publicly showcases RVNP's programs, campuses, achievements, and student life to attract new students. Second, <strong>information sharing</strong>: the administration can publish official announcements that reach every user instantly, with campus-specific and department-specific targeting. Third, <strong>community engagement</strong>: students, staff, and alumni across all five campuses can interact, join groups, share content, and build lasting connections.
+        </p>
+        <p>
+            Uniquely, the platform includes an AI assistant called <strong>HDM AI</strong> that functions as a 24/7 school assistant. Guests — people who are not yet registered students or staff — can chat with HDM AI to learn about RVNP's courses, campuses, admissions, and campus life. This serves the marketing objective directly, giving prospective students a friendly, always-available information channel.
+        </p>
+
+        <h3>2.3 Key Functionalities</h3>
+        <table>
+            <tr><th>Module</th><th>Functionality</th></tr>
+            <tr><td>Authentication</td><td>Role-based registration (Student, Staff, Alumni, Guest), OTP verification via Email + SMS, JWT-based login, password reset, session management</td></tr>
+            <tr><td>Social Feed</td><td>Posts with text, images, videos, feelings, locations, tagged users; privacy controls; shared posts; infinite scroll; All Posts and My Campus tabs</td></tr>
+            <tr><td>Reels</td><td>Short-form vertical videos with auto-play on scroll, reactions, comments, shares, view counts, AI-generated captions, thumbnail support</td></tr>
+            <tr><td>Stories</td><td>24-hour disappearing content with views tracking, reactions, privacy controls, and automatic cleanup</td></tr>
+            <tr><td>Reactions</td><td>Seven reaction types (Like, Love, Care, Haha, Wow, Sad, Angry) with aggregated summary displays ("You, Jane, and 3 others")</td></tr>
+            <tr><td>Comments</td><td>Threaded comments with replies, likes, mentions, edits, soft deletion</td></tr>
+            <tr><td>Messaging</td><td>Direct 1-on-1 chat, group chat, delivery ticks (sent, delivered, read), typing indicators, unread counts, AI chat with HDM AI</td></tr>
+            <tr><td>Friends</td><td>Mutual follow detection, friends list, follower/following lists, friend suggestions, messageable user filtering</td></tr>
+            <tr><td>Groups</td><td>Public/Private/Campus-only groups, group posts with images, member management, roles (Admin/Member), group settings and avatar</td></tr>
+            <tr><td>Events</td><td>Event creation by Admin/Staff only, upcoming and ongoing tabs, campus-specific events, automatic notification to campus users</td></tr>
+            <tr><td>Marketplace</td><td>Buy and sell listings with multiple images, categories, filters, offers system, mark as sold, auto-expiry after 30 days</td></tr>
+            <tr><td>Notifications</td><td>In-app notifications for follows, reactions, comments, messages, group invites, events, marketplace offers, badges, and mentions</td></tr>
+            <tr><td>Search</td><td>Global search across users, posts, reels, groups, events, and marketplace with debounced input and tabbed results</td></tr>
+            <tr><td>Privacy Settings</td><td>Profile visibility, post/reel/story visibility, comment/reaction/follow/message permissions, online status, last seen, read receipts</td></tr>
+            <tr><td>Hashtags</td><td>Automatic hashtag extraction from posts, clickable hashtags, trending hashtags widget, hashtag-specific pages</td></tr>
+            <tr><td>Mentions</td><td>@-mention autocomplete in posts, comments, chat, and group posts; clickable mentions linking to profiles</td></tr>
+            <tr><td>Badges</td><td>Automatic badge awarding (Top Contributor, Top Fan, Chatterbox, Group Leader, Marketplace Pro), notification on award, badges page</td></tr>
+            <tr><td>Leaderboard</td><td>Top Contributors and Top Fans rankings based on contribution scores and fan scores</td></tr>
+            <tr><td>HDM AI</td><td>AI chat assistant for users and guests, AI content generation for posts and captions, AI comment analysis for post owners</td></tr>
+            <tr><td>Admin Dashboard</td><td>Real-time statistics, user management, content moderation, analytics with leaderboards, general settings, upload settings, AI settings, campuses, departments, backups, health monitoring</td></tr>
+            <tr><td>Multi-Campus Support</td><td>All five campuses connected with campus-specific feeds, users, groups, and events</td></tr>
+            <tr><td>Progressive Web App</td><td>Installable on mobile and desktop, offline-capable manifest, app icons for all devices</td></tr>
+        </table>
+
+        <!-- SECTION 3: SYSTEM ARCHITECTURE -->
+        <h2>3. SYSTEM ARCHITECTURE</h2>
+
+        <h3>3.1 Technology Stack</h3>
+        <table>
+            <tr><th>Layer</th><th>Technology</th></tr>
+            <tr><td>Backend Runtime</td><td>Node.js 24 (production), CommonJS modules</td></tr>
+            <tr><td>Backend Framework</td><td>Express.js 4</td></tr>
+            <tr><td>Database</td><td>PostgreSQL (Neon cloud) with Prisma ORM</td></tr>
+            <tr><td>Caching & Sessions</td><td>Redis (ioredis) with in-memory fallback</td></tr>
+            <tr><td>Authentication</td><td>JSON Web Tokens (JWT) with bcryptjs, refresh token rotation</td></tr>
+            <tr><td>Web Frontend</td><td>React 18, Vite, Tailwind CSS, React Router v6, Zustand (state)</td></tr>
+            <tr><td>Admin Frontend</td><td>React 18, Vite, Tailwind CSS, separate deployment on port 3001</td></tr>
+            <tr><td>Real-time Communication</td><td>Socket.io with Redis adapter</td></tr>
+            <tr><td>AI Engine</td><td>HDM AI (custom API at https://hdmaiserver.pxxl.click/api/v1)</td></tr>
+            <tr><td>Email Service</td><td>HDMBridge / Brevo (feature-gated)</td></tr>
+            <tr><td>SMS Service</td><td>HDMBridge / Brevo (feature-gated)</td></tr>
+            <tr><td>Image & Video Storage</td><td>Cloudinary (with local fallback)</td></tr>
+            <tr><td>File Uploads</td><td>Multer with dynamic size limits from admin settings</td></tr>
+            <tr><td>Task Scheduling</td><td>node-cron (5 schedulers: story cleanup, marketplace expiry, backup, email queue, SMS queue, cache cleanup)</td></tr>
+            <tr><td>Process Management</td><td>nodemon (dev), Node cluster (prod)</td></tr>
+            <tr><td>Deployment</td><td>Render (backend), Vercel/Netlify (frontend)</td></tr>
+        </table>
+
+        <h3>3.2 Deployment Architecture</h3>
+        <div class="architecture-diagram">
+┌──────────────────────────────────────────────────────────┐<br>
+│                    CLIENT LAYER                           │<br>
+│   Main App (React + Vite)  │  Admin Panel (React + Vite) │<br>
+│   :3000                    │  :3001                       │<br>
+│   https://rvnpcampushub.pxxl.click                       │<br>
+└───────────────────────┬──────────────────────────────────┘<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ HTTPS<br>
+┌───────────────────────▼──────────────────────────────────┐<br>
+│              NODE.JS + EXPRESS SERVER (:5000)            │<br>
+│   JWT Auth │ CORS │ Rate Limiting │ Helmet │ Morgan      │<br>
+│   Routes: /api/auth │ /api/posts │ /api/messages │ ...   │<br>
+│   Socket.io │ Redis Adapter │ File Uploads │ Schedulers  │<br>
+│   https://rvnpcampusapi.onrender.com                     │<br>
+└───────┬──────────────────────────┬───────────────────────┘<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+┌───────▼─────────────┐&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;┌───────▼──────────────┐<br>
+│   DATA LAYER         │&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│   AI ENGINE          │<br>
+│   PostgreSQL (Neon)  │&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│   HDM AI             │<br>
+│   Prisma ORM         │&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│   https://hdmai...   │<br>
+│   Redis (Upstash)    │&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│   Chat / Content /   │<br>
+│   Cloudinary (media) │&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│   Comment Analysis   │<br>
+└──────────────────────┘&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└──────────────────────┘<br>
+<br>
+┌──────────────────────────────────────────────────────────┐<br>
+│                 EXTERNAL SERVICES                         │<br>
+│   HDMBridge (Email + SMS) │ Brevo (Email + SMS)           │<br>
+│   Cloudinary (Media) │ Redis (Cache)                      │<br>
+└──────────────────────────────────────────────────────────┘
+        </div>
+
+        <h3>3.3 Multi-Campus Architecture</h3>
+        <p>
+            The platform is designed from the ground up to support multiple campuses under a single unified system. Five campuses are seeded: Main Campus (Njoro Road, Nakuru), Nakuru City Campus, Kericho Campus, Mwachon Campus, and Kureisoi Campus. Each user is associated with a campus through a foreign key. Campus-scoped content includes posts, reels, groups, events, and stories. Users can view content from their own campus via the "My Campus" tab in the feed, while the "All Posts" tab shows content from the entire institution.
+        </p>
+
+        <h3>3.4 Role-Based Access Control</h3>
+        <table>
+            <tr><th>Role</th><th>Permissions</th></tr>
+            <tr><td>Student</td><td>Full social features: post, react, comment, follow, message, join groups, view events, buy/sell in marketplace, chat with AI, view own profile, adjust privacy</td></tr>
+            <tr><td>Staff</td><td>All Student permissions plus: create events, create group posts with elevated visibility, considered trusted reporter for moderation</td></tr>
+            <tr><td>Alumni</td><td>Limited to core social features, graduation year field, no campus-specific feed, no course/year fields</td></tr>
+            <tr><td>Guest (planned)</td><td>Public feed view, campus pages view, HDM AI chat for school questions, no posting, no messaging</td></tr>
+            <tr><td>Admin</td><td>All user permissions plus admin dashboard: user management, content moderation, reports, audit logs, analytics view, general settings view, campuses/departments management, legals management</td></tr>
+            <tr><td>Super Admin</td><td>All Admin permissions plus: delete users, change roles, update general settings, update AI settings, manage backups, update upload settings, delete settings</td></tr>
+        </table>
+
+        <h3>3.5 HDM AI Architecture</h3>
+        <p>
+            HDM AI is integrated through a single general chat API endpoint provided by HDM:
+            <code>POST https://hdmaiserver.pxxl.click/api/v1/projects/general/public-chat</code>.
+            All AI features use this single endpoint with different system prompts. Three AI features are supported:
+        </p>
+        <table>
+            <tr><th>Feature</th><th>System Prompt Purpose</th><th>Admin Toggle</th></tr>
+            <tr><td>Chat Assistant</td><td>Friendly campus AI assistant for RVNP questions and general conversation</td><td>Chat Enabled</td></tr>
+            <tr><td>Content Generator</td><td>Content writer for posts, reel captions, and events</td><td>Content Enabled</td></tr>
+            <tr><td>Comment Analysis</td><td>Analyzer that returns JSON with summary, sentiment, key topics, and notable comments</td><td>Comment Analysis Enabled</td></tr>
+        </table>
+        <p>
+            When AI is enabled by admin, a special AI user with <code>isAI = true</code> is created or updated. This user appears in the Messages list with HDM Verified badge and is always online. Guests and users can chat with HDM AI at <code>/messages/ai</code>.
+        </p>
+
+        <h3>3.6 Real-Time Architecture</h3>
+        <p>
+            Real-time communication is powered by Socket.io. When a user connects, the socket joins three rooms: <code>user:{userId}</code>, <code>campus:{campusId}</code>, and <code>group:{groupId}</code>. The server emits the following events: <code>new-message</code> for chat, <code>notification</code> for in-app notifications, <code>campus-notification</code> for campus-wide alerts, and <code>group-notification</code> for group events. The frontend NotificationContext listens to these events and updates unread counts and notification lists in real time.
+        </p>
+
+        <!-- SECTION 4: KEY PAGES -->
+        <h2>4. SEQUENCED DESCRIPTION OF KEY PAGES</h2>
+
+        <h3>4.1 Login Page</h3>
+        <p>The Login page uses a green-bordered card design centered on the screen with decorative background circles. It includes email and password fields with icons, a password visibility toggle, forgot password link, and a link to register.</p>
+        <ul class="features-list">
+            <li>Email field with mail icon</li>
+            <li>Password field with lock icon and eye toggle</li>
+            <li>Forgot Password link</li>
+            <li>Green Login button with icon</li>
+            <li>Link to Create Account</li>
+        </ul>
+        <div class="screenshot-placeholder"><div class="number">1</div><strong>SCREENSHOT — Login Page</strong><div class="caption">RVNP Campus Hub Login page with green-bordered card and centered logo.</div></div>
+
+        <h3>4.2 Register Page</h3>
+        <p>The Register page allows role selection (Student, Staff, Alumni) and conditionally shows different form fields per role.</p>
+        <ul class="features-list">
+            <li>Role dropdown: Student, Staff / Lecturer, Alumni</li>
+            <li>Student role: Full Name, Email, Phone, Password, Campus, Department, Course, Year</li>
+            <li>Staff role: Same as Student plus Staff ID</li>
+            <li>Alumni role: Full Name, Email, Phone, Password, Graduation Year</li>
+            <li>OTP verification modal on submission</li>
+        </ul>
+        <div class="screenshot-placeholder"><div class="number">2</div><strong>SCREENSHOT — Register Page</strong><div class="caption">RVNP Campus Hub Register page with role selection and conditional fields.</div></div>
+
+        <h3>4.3 OTP Verification Modal</h3>
+        <p>After registration, users see a modal asking for the 6-digit OTP sent via Email and SMS. The OTP field uses large letter-spaced digits with a green-bordered design.</p>
+        <div class="screenshot-placeholder"><div class="number">3</div><strong>SCREENSHOT — OTP Modal</strong><div class="caption">RVNP Campus Hub OTP verification modal with 6-digit input.</div></div>
+
+        <h3>4.4 Feed Page</h3>
+        <p>The main landing page after login. Shows the Stories bar, trending hashtags, post composer, tabs, reels row, and the infinite-scroll feed of posts.</p>
+        <ul class="features-list">
+            <li>Stories bar with horizontally scrolling avatars</li>
+            <li>Trending hashtags chips (mobile + desktop)</li>
+            <li>Post composer with image, video, feeling, location, tag, and AI content buttons</li>
+            <li>Tabs: All Posts | My Campus</li>
+            <li>Reels row with horizontal scrolling thumbnails</li>
+            <li>Posts with reactions, comments, shares, and HDM Verified badges</li>
+            <li>Infinite scroll with Load More button</li>
+        </ul>
+        <div class="screenshot-placeholder"><div class="number">4</div><strong>SCREENSHOT — Feed Page</strong><div class="caption">RVNP Campus Hub Feed with stories, composer, tabs, reels row, and posts.</div></div>
+
+        <h3>4.5 Post Card with Reactions</h3>
+        <p>Each post card shows the author (with HDM Verified badge), timestamp, content, images or video, reaction summary, and action buttons.</p>
+        <ul class="features-list">
+            <li>Author avatar, name, HDM Verified badge, timestamp</li>
+            <li>Text content with hashtag and mention highlighting</li>
+            <li>Image grid (single or multiple) with lightbox viewer</li>
+            <li>Reaction picker with 7 emoji types</li>
+            <li>Reaction summary: "You, Jane, and 3 others"</li>
+            <li>Comment modal with threaded replies</li>
+            <li>Share modal with 5 options</li>
+            <li>AI Comment Analysis button</li>
+        </ul>
+        <div class="screenshot-placeholder"><div class="number">5</div><strong>SCREENSHOT — Post Card</strong><div class="caption">RVNP Campus Hub post card with reaction summary and action buttons.</div></div>
+
+        <h3>4.6 Reels Page</h3>
+        <p>Short-form vertical videos displayed as individual posts with auto-play on scroll and full video controls.</p>
+        <ul class="features-list">
+            <li>Each reel displayed as separate card</li>
+            <li>Auto-play when scrolled into view (IntersectionObserver)</li>
+            <li>Native video controls</li>
+            <li>Author info with HDM Verified badge and follow button</li>
+            <li>Like, comment, share, views actions</li>
+            <li>Reaction picker with green default heart</li>
+            <li>Upload reel button</li>
+        </ul>
+        <div class="screenshot-placeholder"><div class="number">6</div><strong>SCREENSHOT — Reels Page</strong><div class="caption">RVNP Campus Hub Reels page with auto-playing videos and engagement actions.</div></div>
+
+        <h3>4.7 Stories Viewer</h3>
+        <p>Full-screen story viewer with progress bars, tap navigation, and multiple reaction types.</p>
+        <div class="screenshot-placeholder"><div class="number">7</div><strong>SCREENSHOT — Story Viewer</strong><div class="caption">RVNP Campus Hub Story Viewer with progress bar and reaction picker.</div></div>
+
+        <h3>4.8 Messages List</h3>
+        <p>Conversation list with unread indicators, search, and the "+" button to start new chats with friends, followers, and following users.</p>
+        <ul class="features-list">
+            <li>HDM AI chat at top if enabled</li>
+            <li>Conversation cards with avatars, names, HDM Verified badges, last message, timestamp</li>
+            <li>Unread green border and count badge</li>
+            <li>"+" button opens new chat modal with friend search</li>
+        </ul>
+        <div class="screenshot-placeholder"><div class="number">8</div><strong>SCREENSHOT — Messages</strong><div class="caption">RVNP Campus Hub Messages list with HDM AI and conversation cards.</div></div>
+
+        <h3>4.9 Chat Window</h3>
+        <p>Chat interface with delivery ticks, read receipts, typing indicators, and mention autocomplete.</p>
+        <ul class="features-list">
+            <li>Green bubbles for own messages, gray bubbles for others</li>
+            <li>Single tick (sent), double gray tick (delivered), blue tick (read)</li>
+            <li>Mention autocomplete dropdown</li>
+            <li>AI typing dots (3 bouncing green dots) for HDM AI</li>
+            <li>Timestamp on each message</li>
+        </ul>
+        <div class="screenshot-placeholder"><div class="number">9</div><strong>SCREENSHOT — Chat Window</strong><div class="caption">RVNP Campus Hub Chat with delivery ticks and mention autocomplete.</div></div>
+
+        <h3>4.10 Profile Page</h3>
+        <p>Full profile with cover photo, avatar, badges, stats, and tabs for Posts and Reels.</p>
+        <ul class="features-list">
+            <li>Clickable cover photo and avatar (opens fullscreen viewer)</li>
+            <li>HDM Verified badge next to name</li>
+            <li>Friends badge if mutual follows</li>
+            <li>Stats: Posts, Reels, Friends, Followers, Following</li>
+            <li>Click stats to open followers/following modals</li>
+            <li>Posts and Reels tabs with content grids</li>
+        </ul>
+        <div class="screenshot-placeholder"><div class="number">10</div><strong>SCREENSHOT — Profile Page</strong><div class="caption">RVNP Campus Hub Profile with cover, stats, badges, and content tabs.</div></div>
+
+        <h3>4.11 Friends Page</h3>
+        <p>Friends list and suggestions page.</p>
+        <div class="screenshot-placeholder"><div class="number">11</div><strong>SCREENSHOT — Friends Page</strong><div class="caption">RVNP Campus Hub Friends page with tabs for Friends and Suggestions.</div></div>
+
+        <h3>4.12 Groups Page</h3>
+        <p>Groups list with All Groups and My Groups tabs, plus a create group modal.</p>
+        <ul class="features-list">
+            <li>Group cards with member and post counts</li>
+            <li>Category and privacy badges</li>
+            <li>Create group button</li>
+            <li>Search groups</li>
+        </ul>
+        <div class="screenshot-placeholder"><div class="number">12</div><strong>SCREENSHOT — Groups Page</strong><div class="caption">RVNP Campus Hub Groups page with group cards and tabs.</div></div>
+
+        <h3>4.13 Group Details Page</h3>
+        <p>Full group page with posts, members, and admin settings.</p>
+        <ul class="features-list">
+            <li>Group avatar, name, description, category, privacy</li>
+            <li>Join/Leave button</li>
+            <li>Posts tab with group post composer and images</li>
+            <li>Members tab with clickable users</li>
+            <li>Settings button for admins (group photo, name, category, privacy)</li>
+        </ul>
+        <div class="screenshot-placeholder"><div class="number">13</div><strong>SCREENSHOT — Group Details</strong><div class="caption">RVNP Campus Hub Group Details with posts, members, and settings.</div></div>
+
+        <h3>4.14 Events Page</h3>
+        <p>Campus events with Upcoming and Ongoing tabs. Only Admin and Staff can create events.</p>
+        <div class="screenshot-placeholder"><div class="number">14</div><strong>SCREENSHOT — Events Page</strong><div class="caption">RVNP Campus Hub Events page with Upcoming and Ongoing tabs.</div></div>
+
+        <h3>4.15 Marketplace Page</h3>
+        <p>Buy and sell platform with listing grid, filters, and detail modal.</p>
+        <ul class="features-list">
+            <li>Search and category/campus filters</li>
+            <li>All Listings and My Listings tabs</li>
+            <li>Listing cards with image, title, price, category, campus</li>
+            <li>Detail modal with images, price, description, seller info</li>
+            <li>Contact Seller, Make Offer, Mark Sold, Delete actions</li>
+            <li>Offers modal for sellers</li>
+        </ul>
+        <div class="screenshot-placeholder"><div class="number">15</div><strong>SCREENSHOT — Marketplace</strong><div class="caption">RVNP Campus Hub Marketplace with listings and detail modal.</div></div>
+
+        <h3>4.16 Notifications Page</h3>
+        <p>All notifications with icons, timestamps, mark-as-read, and delete.</p>
+        <div class="screenshot-placeholder"><div class="number">16</div><strong>SCREENSHOT — Notifications</strong><div class="caption">RVNP Campus Hub Notifications with icons and mark-as-read actions.</div></div>
+
+        <h3>4.17 Search Page</h3>
+        <p>Global search with debounced input and tabbed results across Users, Posts, Reels, Groups, Events, and Marketplace.</p>
+        <div class="screenshot-placeholder"><div class="number">17</div><strong>SCREENSHOT — Search Page</strong><div class="caption">RVNP Campus Hub Search with tabs and results.</div></div>
+
+        <h3>4.18 Privacy Settings Page</h3>
+        <p>Full control over visibility and permissions with toggle switches and dropdowns.</p>
+        <ul class="features-list">
+            <li>Profile visibility, show email, show phone, show course, show year</li>
+            <li>Post/reel/story visibility</li>
+            <li>Comment/react/follow/message permissions</li>
+            <li>Online status, last seen, read receipts</li>
+            <li>Email/SMS/Push notification toggles</li>
+            <li>Private account, two-factor auth</li>
+        </ul>
+        <div class="screenshot-placeholder"><div class="number">18</div><strong>SCREENSHOT — Privacy Settings</strong><div class="caption">RVNP Campus Hub Privacy Settings with toggles and dropdowns.</div></div>
+
+        <h3>4.19 Settings Page</h3>
+        <p>User settings with avatar/cover upload, profile fields, privacy link, and logout.</p>
+        <div class="screenshot-placeholder"><div class="number">19</div><strong>SCREENSHOT — Settings</strong><div class="caption">RVNP Campus Hub Settings with avatar and cover upload progress.</div></div>
+
+        <h3>4.20 HDM AI Chat</h3>
+        <p>AI chat interface with typing dots and instant responses.</p>
+        <div class="screenshot-placeholder"><div class="number">20</div><strong>SCREENSHOT — HDM AI Chat</strong><div class="caption">RVNP Campus Hub HDM AI Chat with bouncing typing dots.</div></div>
+
+        <h3>4.21 Badges Page</h3>
+        <p>All badges with earned status.</p>
+        <div class="screenshot-placeholder"><div class="number">21</div><strong>SCREENSHOT — Badges</strong><div class="caption">RVNP Campus Hub Badges page with earned badges highlighted.</div></div>
+
+        <h3>4.22 Leaderboard Page</h3>
+        <p>Top Contributors and Top Fans with medals.</p>
+        <div class="screenshot-placeholder"><div class="number">22</div><strong>SCREENSHOT — Leaderboard</strong><div class="caption">RVNP Campus Hub Leaderboard with medal rankings.</div></div>
+
+        <h3>4.23 Admin Dashboard</h3>
+        <p>Real-time statistics and quick actions.</p>
+        <div class="screenshot-placeholder"><div class="number">23</div><strong>SCREENSHOT — Admin Dashboard</strong><div class="caption">RVNP Campus Hub Admin Dashboard with stat cards.</div></div>
+
+        <h3>4.24 Admin Users Management</h3>
+        <p>List, search, filter, suspend, reactivate, verify users.</p>
+        <div class="screenshot-placeholder"><div class="number">24</div><strong>SCREENSHOT — Admin Users</strong><div class="caption">RVNP Campus Hub Admin Users with filters and actions.</div></div>
+
+        <h3>4.25 Admin Settings</h3>
+        <p>Tabbed settings including General, AI, Upload, Campuses, Departments.</p>
+        <div class="screenshot-placeholder"><div class="number">25</div><strong>SCREENSHOT — Admin Settings</strong><div class="caption">RVNP Campus Hub Admin Settings with tabbed interface.</div></div>
+
+        <h3>4.26 Admin Analytics</h3>
+        <p>Stat cards, leaderboards, popular posts.</p>
+        <div class="screenshot-placeholder"><div class="number">26</div><strong>SCREENSHOT — Admin Analytics</strong><div class="caption">RVNP Campus Hub Admin Analytics with leaderboards.</div></div>
+
+        <div class="note"><strong>Screenshot Summary:</strong> 26 screenshots covering Login, Register, OTP, Feed, Post Card, Reels, Stories, Messages, Chat, Profile, Friends, Groups, Group Details, Events, Marketplace, Notifications, Search, Privacy Settings, Settings, HDM AI Chat, Badges, Leaderboard, Admin Dashboard, Admin Users, Admin Settings, and Admin Analytics.</div>
+
+        <!-- SECTION 5: SOURCE CODE -->
+        <h2>5. SOURCE CODE EXCERPTS</h2>
+
+        <h3>5.1 Registration with OTP and Email/SMS Verification</h3>
+        <pre>// controllers/client/authController.js
+const register = asyncHandler(async (req, res) => {
+  const { fullName, email, phoneNumber, password, role, campusId, ... } = req.body;
+
+  const userRole = ['STUDENT', 'STAFF', 'ALUMNI'].includes(role) ? role : 'STUDENT';
+
+  const otp = generateOtp();
+  const hashedOtp = await hashOtp(otp);
+  const tempId = generateRandomToken(16);
+
+  const pendingRegistration = {
+    fullName, email, phoneNumber, password, role: userRole,
+    campusId, departmentId, course, yearOfStudy, hashedOtp,
+    otpExpiresAt: generateTokenExpiry(env.otp.expiresIn),
+  };
+
+  await cacheService.setCache(`reg:${tempId}`, pendingRegistration, env.otp.expiresIn);
+
+  await emailService.sendVerificationEmail({ to: email, fullName, otp });
+  await smsService.sendOtpSMS({ to: phoneNumber, otp });
+
+  res.json(ApiResponse.ok({ tempId, message: 'OTP sent successfully' }));
+});
+
+const verifyRegistration = asyncHandler(async (req, res) => {
+  const { tempId, otp } = req.body;
+  const pending = await cacheService.getCache(`reg:${tempId}`);
+  const isValid = await verifyOtp(otp, pending.hashedOtp);
+
+  const passwordHash = await hashPassword(pending.password);
+  const user = await prisma.user.create({ data: { ...pending, passwordHash, verificationStatus: 'VERIFIED' } });
+
+  await emailService.sendWelcomeEmail({ to: user.email, fullName: user.fullName });
+
+  res.status(201).json(ApiResponse.created({ user, accessToken, refreshToken }));
+});</pre>
+
+        <h3>5.2 Real-Time Chat with Delivery Ticks</h3>
+        <pre>// controllers/client/messageController.js
+const sendMessage = asyncHandler(async (req, res) => {
+  const { conversationId } = req.params;
+  const { content, type } = req.body;
+  const userId = req.user.id;
+
+  const conversation = await Conversation.findById(conversationId);
+  const otherParticipant = conversation.participants.find((p) => p.userId !== userId);
+
+  const message = await Message.create({
+    conversationId,
+    senderId: userId,
+    recipientId: otherParticipant?.userId || null,
+    content,
+    type: type || 'TEXT',
+    deliveredAt: new Date(),
+  });
+
+  await Conversation.updateLastMessage(conversationId, message.id);
+
+  if (otherParticipant) {
+    socketService.notifyNewMessage(otherParticipant.userId, message);
+  }
+
+  res.status(201).json(ApiResponse.created(message));
+});</pre>
+
+        <h3>5.3 HDM AI Integration (Single Endpoint, Multiple Prompts)</h3>
+        <pre>// config/hdmai.js
+const hdmai = {
+  callChatAPI: async (message, systemPrompt) => {
+    const config = await hdmai.getConfig();
+    const endpoint = `${config.baseUrl}/projects/general/public-chat`;
+
+    const response = await axios.post(endpoint, { message, system_prompt: systemPrompt }, {
+      headers: { Authorization: `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
+      timeout: 30000,
+    });
+
+    return response.data.data;
+  },
+
+  chat: async (message) => {
+    const config = await hdmai.getConfig();
+    const systemPrompt = `You are ${config.name}, a friendly campus AI assistant for RVNP Campus Hub...`;
+    const result = await hdmai.callChatAPI(message, systemPrompt);
+    return { reply: result.reply, provider: result.provider };
+  },
+
+  generateContent: async (prompt, type = 'post') => {
+    let systemPrompt = '';
+    switch (type) {
+      case 'post': systemPrompt = `You are a content writer for RVNP Campus Hub...`; break;
+      case 'reel_caption': systemPrompt = `You are a caption writer for RVNP Campus Hub...`; break;
+      case 'event': systemPrompt = `You are an event promoter for RVNP Campus Hub...`; break;
+    }
+    const result = await hdmai.callChatAPI(prompt, systemPrompt);
+    return { content: result.reply };
+  },
+};</pre>
+
+        <h3>5.4 Post Creation with Hashtags, Mentions, and Badge Check</h3>
+        <pre>// controllers/client/postController.js
+const createPost = asyncHandler(async (req, res) => {
+  const { content, privacy, campusId } = req.body;
+  const userId = req.user.id;
+
+  const post = await Post.create({ content, privacy: privacy || 'PUBLIC', userId, campusId: campusId || req.user.campusId });
+
+  // Extract hashtags from content and increment their post counts
+  if (content?.text) {
+    const hashtags = extractHashtags(content.text);
+    for (const tag of hashtags) {
+      await Hashtag.upsert(tag);
+    }
+  }
+
+  // Check and award badges
+  await Badge.checkAndAwardBadges(userId);
+
+  res.status(201).json(ApiResponse.created(post));
+});</pre>
+
+        <h3>5.5 Groups with Dynamic Avatar, Posts, and Members</h3>
+        <pre>// controllers/client/groupController.js
+const updateGroup = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { name, description, avatarUrl, coverUrl, category, privacy } = req.body;
+  const userId = req.user.id;
+
+  const group = await Group.findById(id);
+  const role = await Group.getMemberRole(id, userId);
+
+  if (role !== 'ADMIN' && group.createdBy !== userId) {
+    throw ApiError.forbidden('Only admin can update group');
+  }
+
+  const updated = await Group.update(id, {
+    name, description, avatarUrl, coverUrl, category, privacy,
+  });
+
+  res.json(ApiResponse.ok(updated, 'Group updated successfully'));
+});</pre>
+
+        <h3>5.6 Reaction Summary ("You, Jane, and 3 others")</h3>
+        <pre>// models/client/Reaction.js
+const getReactionSummary = async (postId, reelId, commentId, currentUserId) => {
+  const reactions = await prisma.reaction.findMany({ where: { postId }, include: { user: { select: { fullName: true } } } });
+  const EMOJI_MAP = { LIKE: '👍', LOVE: '❤️', CARE: '🤗', HAHA: '😂', WOW: '😮', SAD: '😢', ANGRY: '😡' };
+
+  const typeCounts = {};
+  reactions.forEach((r) => { typeCounts[r.type] = (typeCounts[r.type] || 0) + 1; });
+
+  const sortedTypes = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]);
+  const topEmojis = sortedTypes.slice(0, 2).map(([type]) => EMOJI_MAP[type]);
+
+  const hasYou = reactions.some((r) => r.userId === currentUserId);
+  const otherReactors = reactions.filter((r) => r.userId !== currentUserId);
+  const topReactors = otherReactors.slice(0, 2).map((r) => r.user.fullName);
+
+  let displayText = '';
+  if (hasYou && topReactors.length === 0) displayText = 'You reacted';
+  else if (hasYou && topReactors.length === 1) displayText = `You and ${topReactors[0]}`;
+  else if (hasYou && topReactors.length === 2) displayText = `You, ${topReactors[0]}, and ${reactions.length - 3} others`;
+
+  return { total: reactions.length, topEmojis, displayText };
+};</pre>
+
+        <h3>5.7 Badge System with Auto-Award and Notification</h3>
+        <pre>// models/client/Badge.js
+const awardBadge = async (userId, badgeId) => {
+  const existing = await prisma.userBadge.findUnique({ where: { userId_badgeId: { userId, badgeId } } });
+  if (existing) return existing;
+
+  const userBadge = await prisma.userBadge.create({ data: { userId, badgeId }, include: { badge: true } });
+
+  await notificationService.createNotification({
+    userId,
+    type: 'SYSTEM',
+    title: 'New Badge Earned!',
+    body: `You earned the ${userBadge.badge.icon} ${userBadge.badge.name} badge: ${userBadge.badge.description}`,
+    data: { badgeId, badgeName: userBadge.badge.name },
+  });
+
+  return userBadge;
+};
+
+const checkAndAwardBadges = async (userId) => {
+  const user = await prisma.user.findUnique({ where: { id: userId }, include: { _count: { select: { posts: true, reactions: true, sentMessages: true, createdGroups: true, listings: true } } } });
+
+  if (user._count.posts >= 50) await awardBadge(userId, badgeMap['Top Contributor']);
+  if (user._count.reactions >= 100) await awardBadge(userId, badgeMap['Top Fan']);
+  if (user._count.sentMessages >= 500) await awardBadge(userId, badgeMap['Chatterbox']);
+};</pre>
+
+        <h3>5.8 Hashtag Extraction</h3>
+        <pre>// utils/hashtagParser.js
+const extractHashtags = (text) => {
+  if (!text) return [];
+  const matches = text.match(/#[\w]+/g) || [];
+  return [...new Set(matches.map((tag) => tag.replace('#', '').toLowerCase()))];
+};
+
+const extractMentions = (text) => {
+  if (!text) return [];
+  const matches = text.match(/@[\w]+/g) || [];
+  return [...new Set(matches.map((mention) => mention.replace('@', '')))];
+};</pre>
+
+        <h3>5.9 Role-Based Access Control Middleware</h3>
+        <pre>// middleware/admin/requireAdmin.js
+const requireAdmin = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) throw ApiError.unauthorized('No token provided');
+
+  const token = authHeader.split(' ')[1];
+  const decoded = verifyAccessToken(token);
+  const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+
+  if (!user) throw ApiError.unauthorized('User not found');
+  if (user.accountStatus === 'SUSPENDED') throw ApiError.forbidden('Account suspended');
+  if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') throw ApiError.forbidden('Admin access required');
+
+  req.user = user;
+  next();
+};</pre>
+
+        <h3>5.10 Progressive Web App Manifest</h3>
+        <pre>// client/public/manifest.json
+{
+  "name": "RVNP Campus Hub",
+  "short_name": "RVNP Hub",
+  "description": "All-in-one social interaction app for Rift Valley National Polytechnic",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#006400",
+  "theme_color": "#006400",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/logo-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/logo-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/logo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/logo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}</pre>
+
+        <!-- SECTION 6: UNIQUE FEATURES AND DIFFERENTIATORS -->
+        <h2>6. UNIQUE FEATURES AND DIFFERENTIATORS</h2>
+
+        <h3>6.1 All-in-One Social Super App</h3>
+        <p>
+            RVNP Campus Hub is not simply a social app or a campus portal. It combines the essential features of five major platforms — Facebook (feed, pages, groups, events), Messenger (direct messaging), WhatsApp (status, simple chat), TikTok (short-form reels), and Telegram (channels, large groups) — into a single product that is re-designed for an educational institution.
+        </p>
+
+        <h3>6.2 Multi-Campus Unification</h3>
+        <p>
+            The platform is specifically designed for institutions with multiple campuses. All five RVNP campuses operate under one unified system with campus-specific content feeds, campus-scoped events, and campus-filtered users. This is a rare feature in generic social platforms.
+        </p>
+
+        <h3>6.3 HDM AI as School Assistant for Guests</h3>
+        <p>
+            Guest users can chat with HDM AI to learn about RVNP — courses, campuses, admissions, and campus life. This directly serves the marketing objective. The AI is powered by a single custom HDM AI endpoint and configured entirely from the admin dashboard. Guests do not need to register to ask questions.
+        </p>
+
+        <h3>6.4 Full Administrative Ecosystem</h3>
+        <p>
+            The admin dashboard is a complete software product in its own right: real-time statistics, user management, content moderation, reports handling, analytics with leaderboards, general settings, upload settings with dynamic file-size and type controls, AI settings, campuses and departments management, legal documents management, backups, and system health monitoring.
+        </p>
+
+        <h3>6.5 Modular Feature Gates</h3>
+        <p>
+            Multiple features are controlled through admin-only gates: Redis (enabled/disabled), Upload provider (local/cloudinary), SMS provider (HDM/Brevo), Email provider (HDM/Brevo), AI chat, AI content, AI comment analysis. This allows the platform to adapt to institutional needs without code changes.
+        </p>
+
+        <h3>6.6 Kenyan-Built for Kenyan Education</h3>
+        <p>
+            RVNP Campus Hub is built by a Kenyan developer (Davis Okoth, HDM) for a Kenyan institution (Rift Valley National Polytechnic). It uses green, white, and red as its native colors, aligning with RVNP's identity. It supports Kenya-specific phone-number formats, KSh currency displays, and local time zones.
+        </p>
+
+        <!-- SECTION 7: CONCLUSION -->
+        <h2>7. CONCLUSION</h2>
+        <p>
+            RVNP Campus Hub represents a substantial original work of software development. It brings together dozens of integrated features — social feed, reels, stories, messaging, groups, events, marketplace, notifications, search, privacy controls, hashtags, mentions, badges, leaderboards, and a full administrative dashboard — into a single coherent platform that is carefully designed for the specific needs of a multi-campus educational institution.
+        </p>
+        <p>
+            The core innovation lies in its unique combination of social network features with campus-specific functionality, its multi-campus architecture, its HDM AI school assistant that serves both registered users and guests, and its comprehensive admin ecosystem with modular feature gates. These elements are not found together in any existing off-the-shelf platform.
+        </p>
+        <p>
+            The software is ready for production deployment, currently live at <strong>https://rvnpcampushub.pxxl.click</strong> with its backend API at <strong>https://rvnpcampusapi.onrender.com</strong> and its AI engine powered by <strong>HDM AI</strong>.
+        </p>
+        <p>
+            This documentation is submitted as evidence of originality, authorship, and technical complexity in support of a copyright registration with the Kenya Copyright Board (KECOBO).
+        </p>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <strong>Document Prepared By:</strong> Davis Okoth<br>
+        <strong>Company:</strong> HDM<br>
+        <strong>Date:</strong> September 2026 &nbsp;|&nbsp; <strong>Software Version:</strong> 1.0.0<br><br>
+        <strong>Copyright Claim:</strong> All rights reserved. This software and its documentation are the intellectual property of Davis Okoth.<br>
+        <strong>Registration Authority:</strong> Kenya Copyright Board (KECOBO) — National Rights Registry (NRR) Portal<br><br>
+        <strong>Software URLs:</strong> https://rvnpcampushub.pxxl.click | https://rvnpcampusapi.onrender.com<br>
+        <strong>AI Engine:</strong> HDM AI
+    </div>
+
+</div>
+
+</body>
+</html>

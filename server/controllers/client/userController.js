@@ -122,6 +122,19 @@ const getUserById = asyncHandler(async (req, res) => {
 
 const updateProfile = asyncHandler(async (req, res) => {
   const userId = req.user.id;
+
+  if (req.user.role === 'GUEST') {
+    const { fullName, bio, avatarUrl, coverUrl } = req.body;
+    const data = {};
+    if (fullName) data.fullName = fullName;
+    if (bio !== undefined) data.bio = bio;
+    if (avatarUrl) data.avatarUrl = avatarUrl;
+    if (coverUrl) data.coverUrl = coverUrl;
+
+    const user = await User.update(userId, data);
+    return res.json(ApiResponse.ok(user, 'Profile updated successfully'));
+  }
+
   const {
     fullName,
     bio,
@@ -151,6 +164,10 @@ const updateProfile = asyncHandler(async (req, res) => {
 const updateCampus = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const { campusId, departmentId } = req.body;
+
+  if (req.user.role === 'GUEST' || req.user.role === 'ALUMNI') {
+    throw ApiError.forbidden('Guests and alumni cannot change campus');
+  }
 
   const data = {};
   if (campusId) data.campusId = campusId;
@@ -227,9 +244,7 @@ const followUser = asyncHandler(async (req, res) => {
     type: 'FOLLOW',
     title: 'New Follower',
     body: `${req.user.fullName} started following you`,
-    data: {
-      followerId: userId,
-    },
+    data: { followerId: userId },
   });
 
   res.json(ApiResponse.ok(null, 'Followed successfully'));

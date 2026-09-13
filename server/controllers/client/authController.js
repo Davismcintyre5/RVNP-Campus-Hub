@@ -37,7 +37,8 @@ const register = asyncHandler(async (req, res) => {
     throw ApiError.badRequest('Full name, email, phone number, and password are required');
   }
 
-  const userRole = ['STUDENT', 'STAFF', 'ALUMNI'].includes(role) ? role : 'STUDENT';
+  const validRoles = ['STUDENT', 'STAFF', 'ALUMNI', 'GUEST'];
+  const userRole = validRoles.includes(role) ? role : 'STUDENT';
 
   if (userRole === 'STUDENT' && (!campusId || !departmentId)) {
     throw ApiError.badRequest('Campus and department are required for students');
@@ -71,8 +72,8 @@ const register = asyncHandler(async (req, res) => {
     phoneNumber,
     password,
     role: userRole,
-    campusId: userRole !== 'ALUMNI' ? campusId : null,
-    departmentId: userRole !== 'ALUMNI' ? departmentId : null,
+    campusId: userRole === 'STUDENT' || userRole === 'STAFF' ? campusId : null,
+    departmentId: userRole === 'STUDENT' || userRole === 'STAFF' ? departmentId : null,
     course: userRole === 'STUDENT' ? course : null,
     yearOfStudy: userRole === 'STUDENT' && yearOfStudy ? parseInt(yearOfStudy) : null,
     staffId: userRole === 'STAFF' ? staffId : null,
